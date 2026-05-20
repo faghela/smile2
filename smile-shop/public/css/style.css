@@ -296,8 +296,21 @@ header { position: sticky; top: 0; z-index: 100; background: var(--glass); backd
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .hero-glow, .product-card::before { display: none; }
+  * { scroll-behavior: auto !important; }
+  .hero-glow, .product-card::before, .confetti-piece { display: none; }
+  .product-card,
+  .cart-btn,
+  .btn-primary,
+  .btn-secondary,
+  .add-btn,
+  .checkout-btn,
+  .search-overlay,
+  .cart-sidebar,
+  .modal,
+  .toast {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* =============================================

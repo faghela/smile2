@@ -80,10 +80,10 @@ function updateCartUI() {
   badge.textContent = count;
   if (count > 0) badge.classList.add('show'); else badge.classList.remove('show');
 
-  const bnavBadge = document.getElementById('bnavBadge');
-  if (bnavBadge) {
-    bnavBadge.textContent = count;
-    if (count > 0) bnavBadge.classList.add('show'); else bnavBadge.classList.remove('show');
+  const bottomNavBadge = document.getElementById('bnavBadge');
+  if (bottomNavBadge) {
+    bottomNavBadge.textContent = count;
+    if (count > 0) bottomNavBadge.classList.add('show'); else bottomNavBadge.classList.remove('show');
   }
 
   const el     = document.getElementById('cartItems');
