@@ -57,3 +57,11 @@ function showToast(msg, type='info') {
     setTimeout(() => t.remove(), 400);
   }, 4000);
 }
+
+function scrollToProducts() {
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('productsSection')?.scrollIntoView({
+    behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    block: 'start'
+  });
+}

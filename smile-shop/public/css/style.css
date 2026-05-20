@@ -20,6 +20,21 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; overflow-x: hidden; scroll-behavior: smooth; }
 a { text-decoration: none; color: inherit; }
+:focus-visible { outline: 2px solid var(--purple-l); outline-offset: 3px; }
+
+.skip-link {
+  position: fixed;
+  top: -60px;
+  right: 1rem;
+  background: var(--grad);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  z-index: 1000;
+  transition: 0.2s;
+}
+.skip-link:focus { top: 1rem; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
@@ -49,6 +64,55 @@ header { position: sticky; top: 0; z-index: 100; background: var(--glass); backd
 .hero-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 60%); pointer-events: none; transition: 0.1s ease-out; z-index: -1; filter: blur(40px); }
 .hero h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; background: linear-gradient(135deg, #fff 20%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; line-height: 1.1; letter-spacing: -1px; }
 .hero p { color: var(--txt2); font-size: 1.2rem; max-width: 600px; margin: 0 auto; font-weight: 300; }
+.hero-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+.btn-primary, .btn-secondary {
+  padding: 0.9rem 1.6rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: 0.3s;
+}
+.btn-primary { background: var(--grad); color: #fff; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 35px rgba(139, 92, 246, 0.5); }
+.btn-secondary { background: var(--card); color: var(--txt); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--purple-l); color: var(--purple-l); }
+
+/* Trust Bar */
+.trust-bar {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.trust-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: 0.3s;
+}
+.trust-card:hover { border-color: var(--border-h); transform: translateY(-2px); }
+.trust-icon {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  background: rgba(139,92,246,0.12);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--purple-l); font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.trust-text h4 { font-size: 0.95rem; margin-bottom: 0.35rem; }
+.trust-text p { color: var(--txt2); font-size: 0.85rem; line-height: 1.6; }
 
 /* Categories (Quick Pills) */
 .cats { display: flex; gap: 0.8rem; padding: 1.5rem 2rem; overflow-x: auto; max-width: 1400px; margin: 0 auto; scroll-behavior: smooth; }
@@ -216,6 +280,8 @@ header { position: sticky; top: 0; z-index: 100; background: var(--glass); backd
   .header-inner { gap: 1rem; }
   .track-link span { display: none; }
   .hero h1 { font-size: 2.2rem; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions button { width: 100%; justify-content: center; }
   .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; padding: 1rem; }
   .card-img { height: 160px; }
   .card-body { padding: 1rem; }
@@ -227,6 +293,24 @@ header { position: sticky; top: 0; z-index: 100; background: var(--glass); backd
   .search-overlay { padding: 1rem; }
   .search-box input { font-size: 1.5rem; padding: 1rem 1rem 1rem 3rem; }
   body { padding-bottom: 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body { scroll-behavior: auto !important; }
+  .hero-glow, .product-card::before, .confetti-piece { display: none; }
+  .product-card,
+  .cart-btn,
+  .btn-primary,
+  .btn-secondary,
+  .add-btn,
+  .checkout-btn,
+  .search-overlay,
+  .cart-sidebar,
+  .modal,
+  .toast {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* =============================================
