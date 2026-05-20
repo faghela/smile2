@@ -12,6 +12,8 @@
 </head>
 <body>
 
+<a class="skip-link" href="#productsSection">تخطي إلى المنتجات</a>
+
 <header id="mainHeader">
   <div class="header-inner">
     <div class="logo">Smile Shop✨</div>
@@ -40,6 +42,34 @@
   <div class="hero-glow" id="heroGlow"></div>
   <h1>تجربة تسوق<br>تليق بعام 2026</h1>
   <p>اكتشف مجموعتنا الحصرية المنسقة بعناية، حيث تلتقي الجودة الفائقة بالتصميم المذهل لتمنحك سعادة لا تُنسى.</p>
+  <div class="hero-actions">
+    <button class="btn-primary" onclick="scrollToProducts()"><i class="fa fa-star"></i> ابدأ التسوق</button>
+    <button class="btn-secondary" onclick="openSearch()"><i class="fa fa-search"></i> بحث ذكي</button>
+  </div>
+</div>
+
+<div class="trust-bar">
+  <div class="trust-card">
+    <div class="trust-icon"><i class="fa fa-truck"></i></div>
+    <div class="trust-text">
+      <h4>توصيل سريع ومرن</h4>
+      <p>توصيل مدعوم بتحديثات لحظية وخيارات شحن مرنة.</p>
+    </div>
+  </div>
+  <div class="trust-card">
+    <div class="trust-icon"><i class="fa fa-shield"></i></div>
+    <div class="trust-text">
+      <h4>دفع آمن عند الاستلام</h4>
+      <p>نحافظ على ثقتك مع دفع آمن وشفافية كاملة.</p>
+    </div>
+  </div>
+  <div class="trust-card">
+    <div class="trust-icon"><i class="fa fa-headset"></i></div>
+    <div class="trust-text">
+      <h4>دعم ذكي 24/7</h4>
+      <p>مساعدة فورية طوال الوقت لتجربة بلا تعقيد.</p>
+    </div>
+  </div>
 </div>
 
 <div class="cats" id="catBar">
@@ -91,7 +121,7 @@
   </div>
 </div>
 
-<div class="products-section">
+<div class="products-section" id="productsSection">
   <div class="products-grid" id="productsGrid" onmousemove="handleCardsGlow(event)">
     <div class="skeleton"></div><div class="skeleton"></div>
     <div class="skeleton"></div><div class="skeleton"></div>

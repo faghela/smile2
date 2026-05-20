@@ -57,3 +57,7 @@ function showToast(msg, type='info') {
     setTimeout(() => t.remove(), 400);
   }, 4000);
 }
+
+function scrollToProducts() {
+  document.getElementById('productsSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}

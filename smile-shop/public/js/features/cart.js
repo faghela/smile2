@@ -1,6 +1,40 @@
 // --- Cart & Upselling ---
 function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); updateCartUI(); }
 
+function getSuggestedProducts(limit = 3) {
+  const available = allProducts.filter(p => p.stock > 0);
+  const shuffled = available.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, limit);
+}
+
+function renderEmptyCart() {
+  const suggestions = getSuggestedProducts();
+  const suggestionsHtml = suggestions.length ? `
+    <h5>اقتراحات تناسب ذوقك</h5>
+    <div class="empty-suggestions">
+      ${suggestions.map(p => `
+        <div class="empty-sug-item">
+          <div class="empty-sug-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}">` : '🛍️'}</div>
+          <div class="empty-sug-info">
+            <div class="empty-sug-name">${p.name}</div>
+            <div class="empty-sug-price">${p.price.toLocaleString('ar-IQ')} د</div>
+          </div>
+          <button class="empty-sug-add" onclick='addToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})' aria-label="إضافة ${p.name}">
+            <i class="fa fa-plus"></i>
+          </button>
+        </div>
+      `).join('')}
+    </div>` : '';
+
+  return `
+    <div class="cart-empty-wrap">
+      <i class="fa fa-shopping-bag"></i>
+      <p>سلتك فارغة الآن — ابدأ جولتك الجديدة.</p>
+      <button class="btn-primary" onclick="closeCart();scrollToProducts()">استعرض المنتجات</button>
+      ${suggestionsHtml}
+    </div>`;
+}
+
 function addToCart(p) {
   const ex = cart.find(i => i.productId === p._id);
   const currentQty = ex ? ex.quantity : 0;
@@ -42,6 +76,12 @@ function updateCartUI() {
   badge.textContent = count;
   if (count > 0) badge.classList.add('show'); else badge.classList.remove('show');
 
+  const bnavBadge = document.getElementById('bnavBadge');
+  if (bnavBadge) {
+    bnavBadge.textContent = count;
+    if (count > 0) bnavBadge.classList.add('show'); else bnavBadge.classList.remove('show');
+  }
+
   const el     = document.getElementById('cartItems');
   const footer = document.getElementById('cartFooter');
   document.getElementById('cartTotal').textContent = total.toLocaleString('ar-IQ') + ' د';
@@ -67,7 +107,7 @@ function updateCartUI() {
 
   // عرض السلة
   if (cart.length === 0) {
-    el.innerHTML = '<div class="cart-empty"><i class="fa fa-shopping-bag"></i><p>سلتك تنتظر إبداعك</p></div>';
+    el.innerHTML = renderEmptyCart();
     footer.style.display = 'none';
     document.getElementById('crossSellSection').style.display = 'none';
   } else {
