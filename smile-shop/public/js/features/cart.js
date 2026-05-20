@@ -3,7 +3,11 @@ function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); u
 
 function getSuggestedProducts(limit = 3) {
   const available = allProducts.filter(p => p.stock > 0);
-  const shuffled = available.sort(() => 0.5 - Math.random());
+  const shuffled = [...available];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   return shuffled.slice(0, limit);
 }
 
@@ -19,7 +23,7 @@ function renderEmptyCart() {
             <div class="empty-sug-name">${p.name}</div>
             <div class="empty-sug-price">${p.price.toLocaleString('ar-IQ')} د</div>
           </div>
-          <button class="empty-sug-add" onclick='addToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})' aria-label="إضافة ${p.name}">
+          <button class="empty-sug-add" data-product-id="${p._id}" aria-label="إضافة ${p.name}">
             <i class="fa fa-plus"></i>
           </button>
         </div>
@@ -108,6 +112,13 @@ function updateCartUI() {
   // عرض السلة
   if (cart.length === 0) {
     el.innerHTML = renderEmptyCart();
+    el.querySelectorAll('[data-product-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const p = allProducts.find(item => item._id === btn.dataset.productId);
+        if (p) addToCart(p);
+      });
+    });
     footer.style.display = 'none';
     document.getElementById('crossSellSection').style.display = 'none';
   } else {
