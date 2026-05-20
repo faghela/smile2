@@ -3,12 +3,12 @@ function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); u
 
 function getSuggestedProducts(limit = 3) {
   const available = allProducts.filter(p => p.stock > 0);
-  const shuffled = [...available];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  const products = [...available];
+  for (let i = products.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [products[i], products[j]] = [products[j], products[i]];
   }
-  return shuffled.slice(0, limit);
+  return products.slice(0, limit);
 }
 
 function renderEmptyCart() {
@@ -34,7 +34,7 @@ function renderEmptyCart() {
     <div class="cart-empty-wrap">
       <i class="fa fa-shopping-bag"></i>
       <p>سلتك فارغة الآن — ابدأ جولتك الجديدة.</p>
-      <button class="btn-primary" onclick="closeCart();scrollToProducts()">استعرض المنتجات</button>
+      <button class="btn-primary" onclick="closeCart();scrollToProducts()" aria-label="استعرض المنتجات">استعرض المنتجات</button>
       ${suggestionsHtml}
     </div>`;
 }
