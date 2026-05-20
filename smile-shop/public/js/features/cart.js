@@ -4,9 +4,9 @@ function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); u
 function getSuggestedProducts(limit = 3) {
   const available = allProducts.filter(p => p.stock > 0);
   const products = [...available];
-  for (let currentIndex = products.length - 1; currentIndex > 0; currentIndex--) {
-    const randomIndex = Math.floor(Math.random() * (currentIndex + 1));
-    [products[currentIndex], products[randomIndex]] = [products[randomIndex], products[currentIndex]];
+  for (let i = products.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [products[i], products[randomIndex]] = [products[randomIndex], products[i]];
   }
   return products.slice(0, limit);
 }
@@ -112,16 +112,17 @@ function updateCartUI() {
   // عرض السلة
   if (cart.length === 0) {
     el.innerHTML = renderEmptyCart();
-    el.querySelectorAll('[data-product-id]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const p = allProducts.find(item => item._id === btn.dataset.productId);
-        if (p) addToCart(p);
-      });
-    });
+    el.onclick = (event) => {
+      const btn = event.target.closest('[data-product-id]');
+      if (!btn) return;
+      event.stopPropagation();
+      const p = allProducts.find(item => item._id === btn.dataset.productId);
+      if (p) addToCart(p);
+    };
     footer.style.display = 'none';
     document.getElementById('crossSellSection').style.display = 'none';
   } else {
+    el.onclick = null;
     // عرض المنتجات أولاً — دائماً — بمعزل عن أي خطأ آخر
     el.innerHTML = cart.map(i => `
       <div class="cart-item">
