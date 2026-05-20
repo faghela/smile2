@@ -59,9 +59,9 @@ function showToast(msg, type='info') {
 }
 
 function scrollToProducts() {
-  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.getElementById('productsSection')?.scrollIntoView({
-    behavior: prefersReduced ? 'auto' : 'smooth',
+    behavior: prefersReducedMotion ? 'auto' : 'smooth',
     block: 'start'
   });
 }

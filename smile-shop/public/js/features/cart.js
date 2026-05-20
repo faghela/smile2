@@ -4,9 +4,9 @@ function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); u
 function getSuggestedProducts(limit = 3) {
   const available = allProducts.filter(p => p.stock > 0);
   const products = [...available];
-  for (let i = products.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [products[i], products[j]] = [products[j], products[i]];
+  for (let currentIndex = products.length - 1; currentIndex > 0; currentIndex--) {
+    const randomIndex = Math.floor(Math.random() * (currentIndex + 1));
+    [products[currentIndex], products[randomIndex]] = [products[randomIndex], products[currentIndex]];
   }
   return products.slice(0, limit);
 }
