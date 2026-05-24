@@ -33,6 +33,7 @@
       <div class="sb-item" onclick="showTab('products',this)"><i class="fa fa-box"></i>المنتجات</div>
       <div class="sb-item" onclick="showTab('orders',this)"><i class="fa fa-shopping-bag"></i>الطلبات</div>
       <div class="sb-item" onclick="showTab('shipping',this)"><i class="fa fa-truck"></i>مناطق التوصيل</div>
+      <div class="sb-item" id="sb-admins" style="display:none" onclick="showTab('admins',this)"><i class="fa fa-users-cog"></i>إدارة المشرفين</div>
     </nav>
     <div class="sb-logout"><button class="btn-out" onclick="doLogout()"><i class="fa fa-sign-out-alt" style="margin-left:.5rem"></i>تسجيل الخروج</button></div>
   </div>
@@ -120,6 +121,20 @@
       </div>
     </div>
 
+    <!-- Admins Management (Owner Only) -->
+    <div class="tab-content" id="tab-admins">
+      <div class="tbl-head">
+        <h2>إدارة حسابات المشرفين</h2>
+        <button class="btn-add" onclick="openAdminModal()"><i class="fa fa-plus" style="margin-left:.4rem"></i>إضافة مشرف</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>اسم المشرف</th><th>الرتبة</th><th>تاريخ الإنشاء</th><th>الإجراءات</th></tr></thead>
+          <tbody id="adminTbl"><tr><td colspan="4" class="no-data">جاري التحميل...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 </div>
@@ -173,6 +188,33 @@
     <div class="fgrp"><label class="lbl">سعر التوصيل (دينار) *</label><input class="inp" type="number" id="sPrice" placeholder="0" min="0"></div>
     <p style="font-size:0.82rem; color:var(--txt2); margin-bottom:1rem">ℹ️ ضع 0 لجعل التوصيل مجانياً لهذه المدينة.</p>
     <button class="btn-grad" id="saveShippingBtn" onclick="saveShippingZone()"><i class="fa fa-save" style="margin-left:.5rem"></i>حفظ المنطقة</button>
+  </div>
+</div>
+</div>
+
+<!-- Admin Modal -->
+<div class="modal-bg" id="adminModal">
+<div class="modal-box">
+  <div class="modal-hd"><span id="adminModalTitle">إضافة مشرف جديد</span><button class="close-x" onclick="closeAdminModal()">✕</button></div>
+  <div class="modal-bd">
+    <input type="hidden" id="adminEditId">
+    <div class="fgrp">
+      <label class="lbl">اسم المستخدم *</label>
+      <input class="inp" id="aUsername" placeholder="مثال: owner123">
+    </div>
+    <div class="fgrp">
+      <label class="lbl">كلمة المرور <span id="aPasswordRequiredHint">*</span></label>
+      <input class="inp" type="password" id="aPassword" placeholder="كلمة المرور (6 رموز على الأقل)">
+      <small style="color: var(--txt2); font-size: 0.75rem; margin-top: 0.2rem; display: block;" id="aPasswordHelp">في حال تعديل المشرف، اترك هذا الحقل فارغاً للاحتفاظ بكلمة المرور الحالية.</small>
+    </div>
+    <div class="fgrp">
+      <label class="lbl">الرتبة / الصلاحية *</label>
+      <select id="aRole" class="status-sel" style="width:100%; height:45px; background:var(--bg-card); color:var(--txt)">
+        <option value="editor">محرر (Editor) - إدارة المنتجات والطلبات فقط</option>
+        <option value="owner">مالك (Owner) - صلاحيات كاملة وإدارة المشرفين</option>
+      </select>
+    </div>
+    <button class="btn-grad" id="saveAdminBtn" onclick="saveAdmin()"><i class="fa fa-save" style="margin-left:.5rem"></i>حفظ حساب المشرف</button>
   </div>
 </div>
 </div>

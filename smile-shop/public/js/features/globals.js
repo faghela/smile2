@@ -7,4 +7,4 @@ let selectedShippingPrice = 0;
 let currentCat = 'الكل';
 let currentPage = 1;
 let hasMoreProducts = true;
-const FREE_SHIPPING_THRESHOLD = 50000; // عتبة الشحن المجاني
+const FREE_SHIPPING_THRESHOLD = 150; // عتبة الشحن المجاني

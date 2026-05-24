@@ -3,22 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smile Shop | تسوق بسعادة - 2026</title>
+<title>Smile Shop | تسوق بسعادة ✨</title>
 <meta name="description" content="متجر Smile Shop - تجربة تسوق استثنائية">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="/config.js"></script>
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
+<!-- Ambient Aurora Blobs -->
+<div class="aurora-bg">
+  <div class="blob blob-purple"></div>
+  <div class="blob blob-pink"></div>
+  <div class="blob blob-blue"></div>
+</div>
+
 <header id="mainHeader">
+  <div class="scroll-progress" id="scrollProgress"></div>
   <div class="header-inner">
     <div class="logo">Smile Shop✨</div>
     
     <div class="search-trigger" onclick="openSearch()">
-      <i class="fa fa-search"></i>
-      <span>ابحث عن العطور، الساعات، الملابس...</span>
+      <div class="search-trigger-inner">
+        <i class="fa fa-search"></i>
+        <span>ابحث عن العطور، الساعات، الملابس...</span>
+      </div>
+      <kbd class="search-kbd">/</kbd>
     </div>
 
     <div class="header-actions">
@@ -38,12 +49,15 @@
 
 <div class="hero" id="heroSection" onmousemove="moveGlow(event)">
   <div class="hero-glow" id="heroGlow"></div>
-  <h1>تجربة تسوق<br>تليق بعام 2026</h1>
-  <p>اكتشف مجموعتنا الحصرية المنسقة بعناية، حيث تلتقي الجودة الفائقة بالتصميم المذهل لتمنحك سعادة لا تُنسى.</p>
+  <div class="hero-badge">
+    <span>✨ تجربة تليق بك في عام 2026</span>
+  </div>
+  <h1>كل ما تتمناه،<br><span class="shimmer-text">يصلك بابتسامة ✨</span></h1>
+  <p>اكتشف تشكيلة حصرية من المنتجات المنسقة بعناية لتناسب ذوقك الرفيع، مع توصيل سريع وتجربة تسوق ممتعة وسلسة.</p>
 </div>
 
 <div class="cats" id="catBar">
-  <button class="cat-btn active" onclick="filterCat('الكل',this)">الكل</button>
+  <button class="cat-btn active" onclick="filterCat('الكل',this)">✨ الكل</button>
 </div>
 
 <!-- Filter Bar -->
@@ -161,100 +175,240 @@
       <button class="close-btn" onclick="closeCheckout()"><i class="fa fa-times"></i></button>
     </div>
     <div class="modal-body">
-      
-      <div class="step-indicator">
-        <div class="step-progress" id="stepProgress"></div>
-        <div class="step-dot active" id="dot1">1</div>
-        <div class="step-dot" id="dot2">2</div>
-        <div class="step-dot" id="dot3">3</div>
-      </div>
-
-      <!-- Step 1: Personal Info -->
-      <div class="checkout-step active" id="step1">
-        <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">المعلومات الشخصية</h3>
-        <div class="form-group" id="fgName">
-          <label>الاسم الكامل *</label>
-          <input type="text" id="custName" placeholder="محمد أحمد" oninput="validateStep1()">
-          <i class="fa fa-check-circle valid-icon"></i>
-        </div>
-        <div class="form-group" id="fgPhone">
-          <label>رقم الهاتف *</label>
-          <input type="tel" id="custPhone" placeholder="07xxxxxxxxx" oninput="validateStep1()">
-          <i class="fa fa-check-circle valid-icon"></i>
-        </div>
-        <div class="step-actions">
-          <button class="btn-next" id="btnNext1" onclick="nextStep(2)" disabled>متابعة التوصيل</button>
-        </div>
-      </div>
-
-      <!-- Step 2: Address & City -->
-      <div class="checkout-step" id="step2">
-        <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">تفاصيل التوصيل</h3>
+      <div class="checkout-container">
         
-        <!-- City Selector -->
-        <div class="form-group" id="fgCity">
-          <label>المدينة *</label>
-          <div style="position:relative">
-            <select id="custCity" onchange="onCityChange()" style="width:100%;padding:1rem 1.2rem;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--txt);font-family:inherit;font-size:1rem;outline:none;appearance:none;cursor:pointer;transition:0.3s">
-              <option value="">-- اختر مدينتك --</option>
-            </select>
-            <i class="fa fa-chevron-down" style="position:absolute;left:1.2rem;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--txt2)"></i>
+        <div class="checkout-form-side">
+          <div class="step-indicator">
+            <div class="step-progress" id="stepProgress"></div>
+            <div class="step-dot active" id="dot1">1</div>
+            <div class="step-dot" id="dot2">2</div>
+            <div class="step-dot" id="dot3">3</div>
           </div>
-          <!-- Shipping Price Preview -->
-          <div id="shippingPreview" style="margin-top:0.7rem;padding:0.7rem 1rem;background:rgba(139,92,246,0.08);border-radius:10px;font-size:0.9rem;display:none">
-            <i class="fa fa-truck" style="color:var(--purple-l);margin-left:0.4rem"></i>
-            تكلفة التوصيل إلى <b id="spCity"></b>: <b id="spCityPrice" style="color:var(--purple-l)"></b>
+
+          <!-- Step 1: Personal Info -->
+          <div class="checkout-step active" id="step1">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">المعلومات الشخصية</h3>
+            <div class="form-group" id="fgName">
+              <label>الاسم الكامل *</label>
+              <input type="text" id="custName" placeholder="محمد أحمد" oninput="validateStep1()">
+              <div class="valid-icon-svg">
+                <svg class="checkmark-svg" viewBox="0 0 52 52">
+                  <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                  <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+              </div>
+              <span class="error-msg" id="errName">الاسم يجب أن يحتوي على 3 أحرف على الأقل</span>
+            </div>
+            <div class="form-group" id="fgPhone">
+              <label>رقم الهاتف *</label>
+              <input type="tel" id="custPhone" placeholder="09xxxxxxxxx" oninput="validateStep1()">
+              <div class="valid-icon-svg">
+                <svg class="checkmark-svg" viewBox="0 0 52 52">
+                  <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                  <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+              </div>
+              <span class="error-msg" id="errPhone">الرجاء إدخال رقم هاتف ليبي صالح (مثال: 0921234567)</span>
+            </div>
+            <div class="step-actions">
+              <button class="btn-next" id="btnNext1" onclick="nextStep(2)">متابعة التوصيل</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Address & City -->
+          <div class="checkout-step" id="step2">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">تفاصيل التوصيل</h3>
+            
+            <!-- City Selector -->
+            <div class="form-group" id="fgCity">
+              <label>المدينة *</label>
+              <!-- Hidden select to keep compatibility with existing JS -->
+              <select id="custCity" onchange="onCityChange()" style="display:none !important">
+                <option value="">-- اختر مدينتك --</option>
+              </select>
+              
+              <!-- Modern Visual City Selector -->
+              <div class="city-selector-modern">
+                <div class="city-search-wrapper">
+                  <i class="fa fa-search search-icon"></i>
+                  <input type="text" id="citySearchInput" oninput="filterCityCards()" class="city-search-input" placeholder="ابحث عن مدينتك...">
+                </div>
+                <div class="city-cards-grid" id="cityCardsGrid">
+                  <div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding: 1rem 0;">جاري تحميل المدن...</div>
+                </div>
+              </div>
+              <span class="error-msg" id="errCity">الرجاء اختيار المدينة لتحديد سعر التوصيل</span>
+              <!-- Shipping Price Preview -->
+              <div id="shippingPreview" style="margin-top:0.7rem;padding:0.7rem 1rem;background:rgba(139,92,246,0.08);border-radius:10px;font-size:0.9rem;display:none">
+                <i class="fa fa-truck" style="color:var(--purple-l);margin-left:0.4rem"></i>
+                تكلفة التوصيل إلى <b id="spCity"></b>: <b id="spCityPrice" style="color:var(--purple-l)"></b>
+              </div>
+            </div>
+
+            <div class="form-group" id="fgAddress">
+              <label>العنوان التفصيلي (اختياري)</label>
+              <textarea id="custAddress" rows="3" placeholder="المنطقة، الشارع، أقرب نقطة دالة..." oninput="validateStep2()"></textarea>
+              <div class="valid-icon-svg textarea-svg">
+                <svg class="checkmark-svg" viewBox="0 0 52 52">
+                  <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                  <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Payment Method Selector -->
+            <div class="form-group">
+              <label>طريقة الدفع *</label>
+              <div class="payment-selector">
+                <div class="pay-option active" onclick="selectPaymentMethod('cod', this)">
+                  <div class="pay-option-info">
+                    <i class="fa fa-money-bill-wave"></i>
+                    <span>الدفع عند الاستلام</span>
+                  </div>
+                  <span class="pay-badge">نشط</span>
+                </div>
+                <div class="pay-option disabled" onclick="selectPaymentMethod('zain', this)">
+                  <div class="pay-option-info">
+                    <i class="fa fa-wallet"></i>
+                    <span>زين كاش (Zain Cash)</span>
+                  </div>
+                  <span class="pay-badge soon">قريباً</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>ملاحظات إضافية (اختياري)</label>
+              <textarea id="custNotes" rows="2" placeholder="أوقات التوصيل المفضلة، تفاصيل أخرى..."></textarea>
+            </div>
+            <div class="step-actions">
+              <button class="btn-prev" onclick="nextStep(1)">رجوع</button>
+              <button class="btn-next" id="btnNext2" onclick="nextStep(3)">مراجعة الطلب</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Confirm -->
+          <div class="checkout-step" id="step3">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">المراجعة النهائية</h3>
+            <div class="final-summary">
+              <div class="fs-row"><span>المنتجات (<span id="fsCount">0</span>):</span><span id="fsItemsTotal" style="font-weight:700">0 د</span></div>
+              <div class="fs-row"><span>التوصيل إلى <b id="fsCityName">-</b>:</span><span id="fsShipping" style="font-weight:700">0 د</span></div>
+              <div class="fs-total"><span>الإجمالي المطلوب:</span><span id="fsTotal" style="color:var(--purple-l)">0 د</span></div>
+            </div>
+            <p style="font-size:0.85rem; color:var(--txt2); margin-top:1.5rem; text-align:center;"><i class="fa fa-shield-alt" style="color:var(--green)"></i> الدفع يكون عند الاستلام لضمان حقك الكامل.</p>
+            <div class="step-actions">
+              <button class="btn-prev" onclick="nextStep(2)">رجوع</button>
+              <button class="btn-next" id="submitBtn" onclick="submitOrder()">تأكيد وإرسال الطلب</button>
+            </div>
           </div>
         </div>
 
-        <div class="form-group" id="fgAddress">
-          <label>العنوان التفصيلي *</label>
-          <textarea id="custAddress" rows="3" placeholder="المنطقة، الشارع، أقرب نقطة دالة..." oninput="validateStep2()"></textarea>
-          <i class="fa fa-check-circle valid-icon" style="top:4rem"></i>
+        <div class="checkout-summary-side">
+          <h3>ملخص الطلب</h3>
+          <div id="checkoutSummaryItems" class="checkout-summary-items">
+            <!-- Renders cart items dynamically -->
+          </div>
+          <div class="checkout-summary-totals">
+            <div class="cs-row"><span>المجموع الفرعي:</span><span id="sideSubtotal">0 د</span></div>
+            <div class="cs-row"><span>تكلفة التوصيل:</span><span id="sideShipping">يحدد بعد اختيار المدينة</span></div>
+            <div class="cs-total"><span>الإجمالي الكلي:</span><span id="sideTotal">0 د</span></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>ملاحظات إضافية (اختياري)</label>
-          <textarea id="custNotes" rows="2" placeholder="أوقات التوصيل المفضلة، تفاصيل أخرى..."></textarea>
-        </div>
-        <div class="step-actions">
-          <button class="btn-prev" onclick="nextStep(1)">رجوع</button>
-          <button class="btn-next" id="btnNext2" onclick="nextStep(3)" disabled>مراجعة الطلب</button>
-        </div>
-      </div>
 
-      <!-- Step 3: Confirm -->
-      <div class="checkout-step" id="step3">
-        <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">المراجعة النهائية</h3>
-        <div class="final-summary">
-          <div class="fs-row"><span>المنتجات (<span id="fsCount">0</span>):</span><span id="fsItemsTotal" style="font-weight:700">0 د</span></div>
-          <div class="fs-row"><span>التوصيل إلى <b id="fsCityName">-</b>:</span><span id="fsShipping" style="font-weight:700">0 د</span></div>
-          <div class="fs-total"><span>الإجمالي المطلوب:</span><span id="fsTotal" style="color:var(--purple-l)">0 د</span></div>
-        </div>
-        <p style="font-size:0.85rem; color:var(--txt2); margin-top:1.5rem; text-align:center;"><i class="fa fa-shield-alt" style="color:var(--green)"></i> الدفع يكون عند الاستلام لضمان حقك الكامل.</p>
-        <div class="step-actions">
-          <button class="btn-prev" onclick="nextStep(2)">رجوع</button>
-          <button class="btn-next" id="submitBtn" onclick="submitOrder()">تأكيد وإرسال الطلب</button>
-        </div>
       </div>
-
     </div>
   </div>
 </div>
+
+
+
 <!-- Quick View Modal -->
 <div class="modal-overlay" id="qvOverlay" onclick="closeQuickView(event)">
   <div class="modal qv-modal" id="qvModal" onclick="event.stopPropagation()">
     <button class="close-btn qv-close" onclick="closeQuickView(event, true)"><i class="fa fa-times"></i></button>
     <div class="qv-content">
-      <div class="qv-img" id="qvImg"></div>
+      <div class="qv-img-wrapper">
+        <div class="qv-img" id="qvImg"></div>
+        <div class="qv-badge-group">
+          <span class="qv-badge-item"><i class="fa fa-shield-halved"></i> أصلي 100%</span>
+          <span class="qv-badge-item"><i class="fa fa-magnifying-glass"></i> عاين قبل الدفع</span>
+        </div>
+      </div>
       <div class="qv-details">
-        <div class="qv-cat" id="qvCat"></div>
+        <div class="qv-header-row">
+          <div class="qv-cat" id="qvCat"></div>
+          <div class="qv-stock" id="qvStock"></div>
+        </div>
         <h2 class="qv-name" id="qvName"></h2>
         <div class="qv-price" id="qvPrice"></div>
-        <div class="qv-stock" id="qvStock"></div>
-        <p class="qv-desc" id="qvDesc"></p>
-        <button class="cart-btn qv-add-btn" id="qvAddBtn" onclick="qvAddToCart()">
-          <i class="fa fa-shopping-bag"></i> إضافة للسلة
-        </button>
+        
+        <!-- Luxury Tabs Navigation -->
+        <div class="qv-tabs">
+          <button class="qv-tab-btn active" id="btn-tab-info" onclick="switchQvTab('info')"><i class="fa-solid fa-circle-info"></i> التفاصيل</button>
+          <button class="qv-tab-btn" id="btn-tab-shipping" onclick="switchQvTab('shipping')"><i class="fa-solid fa-truck-fast"></i> الشحن</button>
+          <button class="qv-tab-btn" id="btn-tab-guarantee" onclick="switchQvTab('guarantee')"><i class="fa-solid fa-shield-check"></i> الضمان</button>
+        </div>
+        
+        <!-- Tabs Content Areas -->
+        <div class="qv-tab-content active" id="tab-info">
+          <p class="qv-desc" id="qvDesc"></p>
+          <div class="qv-features">
+            <div class="qv-feat-item"><i class="fa-regular fa-circle-check"></i> خامات ومكونات ذات جودة استثنائية</div>
+            <div class="qv-feat-item"><i class="fa-regular fa-circle-check"></i> تغليف فاخر ومحكم ومناسب للهدايا</div>
+          </div>
+        </div>
+        
+        <div class="qv-tab-content" id="tab-shipping">
+          <div class="qv-info-list">
+            <div class="qv-info-item">
+              <i class="fa-solid fa-truck-ramp-box qv-info-icon"></i>
+              <div>
+                <h5>توصيل سريع للغاية</h5>
+                <p>توصيل لباب بيتك خلال 24 ساعة داخل طرابلس، و 2-3 أيام عمل لباقي المدن الليبية.</p>
+              </div>
+            </div>
+            <div class="qv-info-item">
+              <i class="fa-solid fa-wallet qv-info-icon"></i>
+              <div>
+                <h5>الدفع الآمن عند الاستلام</h5>
+                <p>لا تدفع أي شيء مسبقاً. الدفع نقداً أو عبر الخدمات المصرفية المتاحة عند استلامك لطلبك ورضاك عنه.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="qv-tab-content" id="tab-guarantee">
+          <div class="qv-info-list">
+            <div class="qv-info-item">
+              <i class="fa-solid fa-shield-heart qv-info-icon"></i>
+              <div>
+                <h5>ضمان الجودة والرضا</h5>
+                <p>نحن نضمن أن جميع معروضاتنا أصلية 100%، وتم اختيارها وتخزينها تحت ظروف مثالية.</p>
+              </div>
+            </div>
+            <div class="qv-info-item">
+              <i class="fa-solid fa-clipboard-check qv-info-icon"></i>
+              <div>
+                <h5>حق الفحص الكامل</h5>
+                <p>نمنحك الحق الكامل في فتح الطرد ومعاينة المنتج وتجربته مع مندوب التوصيل قبل السداد.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qv-footer-actions">
+          <div class="qv-qty-section" id="qvQtySection">
+            <span style="font-size:0.95rem; font-weight:600; color:var(--txt2)">الكمية:</span>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQvQty(-1)">-</button>
+              <span class="qty-num" id="qvQtyNum">1</span>
+              <button class="qty-btn" onclick="changeQvQty(1)">+</button>
+            </div>
+          </div>
+          <button class="cart-btn qv-add-btn" id="qvAddBtn" onclick="qvAddToCart()">
+            <i class="fa fa-shopping-bag"></i> إضافة للسلة
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -264,7 +418,9 @@
 <div class="modal-overlay" id="successOverlay">
   <div class="modal success-modal">
     <div class="success-confetti" id="successConfetti"></div>
-    <div class="success-icon">✨</div>
+    <div class="success-glow-ring">
+      <div class="success-icon">✨</div>
+    </div>
     <h2 class="success-title">تم استلام طلبك!</h2>
     <p class="success-sub">شكراً لثقتك — سنتواصل معك قريباً لتأكيد طلبك 😊</p>
     <div class="success-order-id">

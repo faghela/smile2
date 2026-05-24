@@ -1,40 +1,33 @@
+const mongoose = require('mongoose');
 const Order = require('./order.model');
 const Product = require('../products/product.model');
 const ShippingZone = require('../shipping/shippingZone.model');
+
+const rollbackStock = async (deductedProducts) => {
+    for (const item of deductedProducts) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
+            console.error(`[CRITICAL] Failed to rollback stock for product ${item.productId}:`, e);
+        });
+    }
+};
 
 const createOrder = async (req, res) => {
     const { items, customerName, customerPhone, customerAddress, city, notes } = req.body;
     let totalPrice = 0;
     let shippingPrice = 0;
-    const itemsToUpdate = [];
+    const deductedProducts = [];
 
     if (city && city.trim()) {
-        const zone = await ShippingZone.findOne({ city: city.trim() });
-        if (zone) shippingPrice = zone.price;
+        try {
+            const zone = await ShippingZone.findOne({ city: city.trim() });
+            if (zone) shippingPrice = zone.price;
+        } catch (e) {
+            console.warn('Failed to fetch shipping price:', e);
+        }
     }
 
-    for (const item of items) {
-        const product = await Product.findById(item.productId);
-        if (!product)
-            return res.status(404).json({ message: `المنتج "${item.name}" غير موجود` });
-        if (product.stock < item.quantity)
-            return res.status(400).json({
-                message: `الكمية المطلوبة من "${product.name}" غير كافية. المتوفر: ${product.stock}`
-            });
-        
-        totalPrice += product.price * item.quantity;
-        itemsToUpdate.push({
-            productId: item.productId,
-            name: product.name,
-            price: product.price,
-            quantity: item.quantity,
-            imageUrl: product.imageUrl
-        });
-    }
-
-    const deductedProducts = [];
     try {
-        for (const item of itemsToUpdate) {
+        for (const item of items) {
             const updatedProduct = await Product.findOneAndUpdate(
                 { _id: item.productId, stock: { $gte: item.quantity } },
                 { $inc: { stock: -item.quantity } },
@@ -42,13 +35,38 @@ const createOrder = async (req, res) => {
             );
 
             if (!updatedProduct) {
-                throw new Error(`لم نتمكن من حجز الكمية للمنتج "${item.name}" لتغير المخزون بشكل مفاجئ.`);
+                await rollbackStock(deductedProducts);
+                const exists = await Product.exists({ _id: item.productId });
+                if (!exists) {
+                    return res.status(404).json({ message: `المنتج غير موجود` });
+                }
+                return res.status(400).json({ message: `عذراً، الكمية المطلوبة من بعض المنتجات غير متوفرة حالياً` });
             }
-            deductedProducts.push(item);
+
+            totalPrice += updatedProduct.price * item.quantity;
+            deductedProducts.push({
+                productId: item.productId,
+                name: updatedProduct.name,
+                price: updatedProduct.price,
+                quantity: item.quantity,
+                imageUrl: updatedProduct.imageUrl
+            });
         }
 
+        // Generate a unique 6-digit order number safely
+        let orderNumber;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 20;
+        do {
+            if (++attempts > MAX_ATTEMPTS) {
+                throw new Error('فشل توليد رقم طلب فريد، يرجى المحاولة مرة أخرى');
+            }
+            orderNumber = Math.floor(100000 + Math.random() * 900000).toString();
+        } while (await Order.exists({ orderNumber }));
+
         const order = new Order({ 
-            items: itemsToUpdate, 
+            orderNumber,
+            items: deductedProducts, 
             customerName, customerPhone, customerAddress, city: city || '', 
             shippingPrice,
             notes, 
@@ -59,11 +77,7 @@ const createOrder = async (req, res) => {
         res.status(201).json({ success: true, order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });
 
     } catch (err) {
-        for (const item of deductedProducts) {
-            await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
-                console.error(`[CRITICAL] Failed to rollback stock for product ${item.productId}:`, e);
-            });
-        }
+        await rollbackStock(deductedProducts);
         res.status(500).json({ message: err.message });
     }
 };
@@ -107,12 +121,12 @@ const exportOrders = async (req, res) => {
 
             let chunk = '';
             orders.forEach(o => {
-                const date = new Date(o.createdAt).toLocaleDateString('ar-IQ');
+                const date = new Date(o.createdAt).toLocaleDateString('en-US');
                 const name    = `"${(o.customerName    || '').replace(/"/g, '""')}"`;
                 const phone   = `"${(o.customerPhone   || '').replace(/"/g, '""')}"`;
                 const address = `"${(o.customerAddress || '').replace(/"/g, '""')}"`;
                 const items   = `"${o.items.map(i => `${i.name} (${i.quantity})`).join(' - ')}"`;
-                chunk += `"${o._id}",${name},${phone},${address},${o.totalPrice},${o.status},${date},${items}\n`;
+                chunk += `"${o.orderNumber || o._id}",${name},${phone},${address},${o.totalPrice},${o.status},${date},${items}\n`;
             });
             
             res.write(chunk);
@@ -138,7 +152,13 @@ const trackOrders = async (req, res) => {
             return res.status(400).json({ message: 'يرجى إدخال رقم هاتف صالح ورقم الطلب' });
         }
         
-        const query = { customerPhone: phone.trim(), _id: orderId.trim() };
+        const trimmedOrderId = orderId.trim();
+        const query = { customerPhone: phone.trim() };
+        if (mongoose.isValidObjectId(trimmedOrderId)) {
+            query._id = trimmedOrderId;
+        } else {
+            query.orderNumber = trimmedOrderId;
+        }
         
         const orders = await Order.find(query)
             .sort({ createdAt: -1 })
@@ -189,6 +209,7 @@ const getOrders = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
     const VALID_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const REFUNDABLE     = ['pending', 'processing'];
     const { status } = req.body;
 
     if (!status || !VALID_STATUSES.includes(status)) {
@@ -198,10 +219,22 @@ const updateOrderStatus = async (req, res) => {
     }
 
     try {
-        const order = await Order.findByIdAndUpdate(
-            req.params.id, { status }, { new: true }
-        );
+        const order = await Order.findById(req.params.id);
         if (!order) return res.status(404).json({ message: 'الطلب غير موجود' });
+
+        const previousStatus = order.status;
+        order.status = status;
+        await order.save();
+
+        // استرجاع المخزون عند إلغاء طلب لم يُشحن أو يُسلَّم بعد
+        if (status === 'cancelled' && previousStatus !== 'cancelled' && REFUNDABLE.includes(previousStatus)) {
+            for (const item of order.items) {
+                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
+                    console.error(`[WARN] Failed to refund stock for product ${item.productId}:`, e);
+                });
+            }
+        }
+
         res.json({ success: true, order });
     } catch (err) {
         res.status(400).json({ message: err.message });

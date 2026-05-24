@@ -14,7 +14,7 @@ function updatePriceLabel() {
   const max = document.getElementById('maxPrice').value;
   const label = document.getElementById('priceRangeLabel');
   if (!min && !max) { label.textContent = '0 — غير محدود'; return; }
-  label.textContent = `${min ? Number(min).toLocaleString('ar-IQ') : '0'} — ${max ? Number(max).toLocaleString('ar-IQ') : 'غير محدود'}`;
+  label.textContent = `${min ? Number(min).toLocaleString('en-US') : '0'} — ${max ? Number(max).toLocaleString('en-US') : 'غير محدود'}`;
 }
 
 function applyFilters() {
@@ -94,9 +94,8 @@ function renderProducts(products, append = false) {
 
   const html = products.map((p, i) => {
     const stockClass = p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : '';
-    const stockTxt   = p.stock === 0 ? 'نفذ المخزون' : p.stock < 5 ? `متبقي ${p.stock} فقط` : `متوفر`;
-    const pData      = JSON.stringify(p).replace(/"/g, '&quot;');
-    return `<div class="product-card" style="animation-delay:${append ? i*0.1 : 0}s" onclick="handleCardClick(event, ${pData})">
+    const stockTxt   = p.stock === 0 ? 'نفذ المخزون' : p.stock < 5 ? 'كمية محدودة' : 'متوفر';
+    return `<div class="product-card" style="animation-delay:${append ? i*0.1 : 0}s" onclick="handleCardClick(event, '${p._id}')">
       <div class="card-img">
         ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy">` : '🛍️'}
         <div class="qv-hint"><i class="fa fa-eye"></i> عرض سريع</div>
@@ -107,7 +106,7 @@ function renderProducts(products, append = false) {
         <div class="card-desc">${p.description}</div>
         <div class="card-footer">
           <div>
-            <div class="card-price">${p.price.toLocaleString('ar-IQ')} د</div>
+            <div class="card-price">${p.price.toLocaleString('en-US')} د</div>
             <div class="card-stock ${stockClass}">${stockTxt}</div>
           </div>
           <button class="add-btn" ${p.stock === 0 ? 'disabled' : ''} title="إضافة للسلة">
@@ -128,7 +127,9 @@ function renderProducts(products, append = false) {
   }, 50);
 }
 
-function handleCardClick(e, p) {
+function handleCardClick(e, productId) {
+  const p = allProducts.find(x => x._id === productId);
+  if (!p) return;
   if (e.target.closest('.add-btn')) {
     if (p.stock > 0) addToCart(p);
   } else {
@@ -139,22 +140,45 @@ function handleCardClick(e, p) {
 
 // --- Quick View Logic ---
 let qvProduct = null;
+let qvQty = 1;
+
+function switchQvTab(tabId) {
+  document.querySelectorAll('.qv-tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.qv-tab-content').forEach(content => content.classList.remove('active'));
+  
+  const selectedBtn = document.getElementById(`btn-tab-${tabId}`);
+  const selectedContent = document.getElementById(`tab-${tabId}`);
+  if (selectedBtn) selectedBtn.classList.add('active');
+  if (selectedContent) selectedContent.classList.add('active');
+}
 
 function openQuickView(p) {
   qvProduct = p;
+  qvQty = 1;
   const stockCls = p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'in';
-  const stockTxt = p.stock === 0 ? '❌ نفذ المخزون' : p.stock < 5 ? `⚠️ متبقي ${p.stock} قطعة فقط` : '✅ متوفر في المخزون';
+  const stockTxt = p.stock === 0 ? '❌ نفذ المخزون' : p.stock < 5 ? '⚠️ متوفر - كمية محدودة' : '✅ متوفر في المخزون';
 
   document.getElementById('qvImg').innerHTML = p.imageUrl
     ? `<img src="${p.imageUrl}" alt="${p.name}">`
     : `<div class="qv-emoji">🛍️</div>`;
   document.getElementById('qvCat').textContent   = p.category || 'عام';
   document.getElementById('qvName').textContent  = p.name;
-  document.getElementById('qvPrice').textContent = `${p.price.toLocaleString('ar-IQ')} دينار`;
+  document.getElementById('qvPrice').textContent = `${p.price.toLocaleString('en-US')} دينار`;
   document.getElementById('qvDesc').textContent  = p.description;
   const stockEl = document.getElementById('qvStock');
   stockEl.textContent = stockTxt;
   stockEl.className   = `qv-stock ${stockCls}`;
+
+  // Reset tab to info
+  switchQvTab('info');
+
+  // تحديث وعرض تحديد الكمية
+  const qtySection = document.getElementById('qvQtySection');
+  if (qtySection) {
+    qtySection.style.display = p.stock === 0 ? 'none' : 'flex';
+  }
+  const qtyNum = document.getElementById('qvQtyNum');
+  if (qtyNum) qtyNum.textContent = 1;
 
   const addBtn = document.getElementById('qvAddBtn');
   addBtn.disabled = p.stock === 0;
@@ -166,17 +190,31 @@ function openQuickView(p) {
   document.body.style.overflow = 'hidden';
 }
 
+function changeQvQty(delta) {
+  if (!qvProduct) return;
+  const newQty = qvQty + delta;
+  if (newQty < 1) return;
+  if (newQty > qvProduct.stock) {
+    showToast('عذراً، لقد تجاوزت الكمية المتاحة في المخزون لهذا المنتج', 'error');
+    return;
+  }
+  qvQty = newQty;
+  const qtyNum = document.getElementById('qvQtyNum');
+  if (qtyNum) qtyNum.textContent = qvQty;
+}
+
 function closeQuickView(event, force = false) {
   if (force || event.target === document.getElementById('qvOverlay')) {
     document.getElementById('qvOverlay').classList.remove('open');
     document.body.style.overflow = '';
     qvProduct = null;
+    qvQty = 1;
   }
 }
 
 function qvAddToCart() {
   if (qvProduct && qvProduct.stock > 0) {
-    addToCart(qvProduct);
+    addToCart(qvProduct, qvQty);
     closeQuickView(null, true);
   }
 }
@@ -194,8 +232,20 @@ async function fetchCategories() {
     const res  = await fetch(`${API}/products/categories`);
     const cats = await res.json();
     const bar  = document.getElementById('catBar');
-    bar.innerHTML = `<button class="cat-btn ${'الكل' === currentCat ? 'active' : ''}" onclick="filterCat('الكل',this)">الكل</button>` +
-      cats.map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="filterCat('${c}',this)">${c}</button>`).join('');
+    const uniqueCats = cats.filter(c => c !== 'الكل');
+    const iconMap = {
+      'الكل': '✨',
+      'بخ': '💨',
+      'عام': '📦',
+      'ساعات': '⌚',
+      'عطور': '🧴',
+      'ملابس': '👕',
+      'أحذية': '👟',
+      'إلكترونيات': '💻'
+    };
+    const getLabel = (c) => `${iconMap[c] || '🏷️'} ${c}`;
+    bar.innerHTML = `<button class="cat-btn ${'الكل' === currentCat ? 'active' : ''}" onclick="filterCat('الكل',this)">${getLabel('الكل')}</button>` +
+      uniqueCats.map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="filterCat('${c}',this)">${getLabel(c)}</button>`).join('');
   } catch(e) {}
 }
 

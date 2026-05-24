@@ -1,15 +1,15 @@
 // --- Cart & Upselling ---
 function saveCart(){ localStorage.setItem('smile_cart', JSON.stringify(cart)); updateCartUI(); }
 
-function addToCart(p) {
+function addToCart(p, qty = 1) {
   const ex = cart.find(i => i.productId === p._id);
   const currentQty = ex ? ex.quantity : 0;
-  if (currentQty >= p.stock) { showToast(`بلغت الحد الأقصى المتوفر من المخزون`, 'error'); return; }
+  if (currentQty + qty > p.stock) { showToast('عذراً، لقد تجاوزت الكمية المتاحة في المخزون لهذا المنتج', 'error'); return; }
   
   // Haptic-like visual feedback via adding a quick vibration class if supported or a CSS animation
   if (navigator.vibrate) navigator.vibrate(50);
   
-  if(ex){ ex.quantity++; } else { cart.push({productId:p._id,name:p.name,price:p.price,quantity:1,imageUrl:p.imageUrl,stock:p.stock}); }
+  if(ex){ ex.quantity += qty; } else { cart.push({productId:p._id,name:p.name,price:p.price,quantity:qty,imageUrl:p.imageUrl,stock:p.stock}); }
   saveCart();
   
   // Trigger cart badge animation
@@ -17,7 +17,7 @@ function addToCart(p) {
   badge.classList.remove('show');
   setTimeout(() => badge.classList.add('show'), 50);
   
-  showToast(`تمت إضافة "${p.name}" بسعادة ✨`, 'success');
+  showToast(`تمت إضافة ${qty} من "${p.name}" بسعادة ✨`, 'success');
   openCart();
 }
 
@@ -44,7 +44,7 @@ function updateCartUI() {
 
   const el     = document.getElementById('cartItems');
   const footer = document.getElementById('cartFooter');
-  document.getElementById('cartTotal').textContent = total.toLocaleString('ar-IQ') + ' د';
+  document.getElementById('cartTotal').textContent = total.toLocaleString('en-US') + ' د';
 
   // شريط تقدم الشحن المجاني
   try {
@@ -57,10 +57,10 @@ function updateCartUI() {
       spBar.style.background = 'var(--green)';
     } else if (total > 0) {
       const remaining = FREE_SHIPPING_THRESHOLD - total;
-      spMsg.innerHTML = `أضف بـ <b style="color:var(--purple-l)">${remaining.toLocaleString('ar-IQ')} د</b> للحصول على شحن مجاني`;
+      spMsg.innerHTML = `أضف بـ <b style="color:var(--purple-l)">${remaining.toLocaleString('en-US')} د</b> للحصول على شحن مجاني`;
       spBar.style.background = 'var(--grad)';
     } else {
-      spMsg.innerHTML = `شحن مجاني عند تسوقك بـ ${FREE_SHIPPING_THRESHOLD.toLocaleString('ar-IQ')} د`;
+      spMsg.innerHTML = `شحن مجاني عند تسوقك بـ ${FREE_SHIPPING_THRESHOLD.toLocaleString('en-US')} د`;
       spBar.style.background = 'var(--grad)';
     }
   } catch(e) { console.warn('shipping bar:', e); }
@@ -77,7 +77,7 @@ function updateCartUI() {
         <div class="cart-item-img">${i.imageUrl ? `<img src="${i.imageUrl}">` : '🛒'}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${i.name}</div>
-          <div class="cart-item-price">${(i.price * i.quantity).toLocaleString('ar-IQ')} د</div>
+          <div class="cart-item-price">${(i.price * i.quantity).toLocaleString('en-US')} د</div>
           <div class="qty-ctrl">
             <button class="qty-btn" onclick="changeQty('${i.productId}',-1)">-</button>
             <span class="qty-num">${i.quantity}</span>
@@ -95,6 +95,11 @@ function updateCartUI() {
 function openCart(){ document.getElementById('cartSidebar').classList.add('open'); document.getElementById('cartOverlay').classList.add('open'); }
 function closeCart(){ document.getElementById('cartSidebar').classList.remove('open'); document.getElementById('cartOverlay').classList.remove('open'); }
 
+function addToCartById(productId, qty = 1) {
+  const p = allProducts.find(x => x._id === productId);
+  if (p) addToCart(p, qty);
+}
+
 function populateCrossSell() {
   const csDiv = document.getElementById('csItems');
   // Simple algorithm: pick 3 random products not in cart
@@ -105,10 +110,10 @@ function populateCrossSell() {
   document.getElementById('crossSellSection').style.display = 'block';
   
   csDiv.innerHTML = shuffled.map(p => `
-    <div class="cs-card" onclick='addToCart(${JSON.stringify(p).replace(/"/g, '&quot;')})'>
+    <div class="cs-card" onclick="addToCartById('${p._id}')">
       <div class="cs-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}</div>
       <div class="cs-name">${p.name}</div>
-      <div class="cs-price">+ ${p.price.toLocaleString('ar-IQ')} د</div>
+      <div class="cs-price">+ ${p.price.toLocaleString('en-US')} د</div>
     </div>
   `).join('');
 }

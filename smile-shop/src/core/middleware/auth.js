@@ -24,4 +24,12 @@ const adminAuth = (req, res, next) => {
     }
 };
 
+const ownerOnly = (req, res, next) => {
+    if (!req.admin || req.admin.role !== 'owner') {
+        return res.status(403).json({ message: 'غير مصرح. هذه العملية تتطلب صلاحيات المالك.' });
+    }
+    next();
+};
+
+adminAuth.ownerOnly = ownerOnly;
 module.exports = adminAuth;

@@ -1,17 +1,109 @@
 // --- Multi-step Checkout & Cities ---
 let currentStep = 1;
 
-// جلب مناطق الشحن وملء القائمة المنسدلة
+// جلب مناطق الشحن وملء القائمة المنسدلة والبطاقات البصرية الحديثة
 async function fetchShippingZones() {
   try {
     const res = await fetch(`${API}/shipping`);
     shippingZones = await res.json();
+    
+    // 1. ملء القائمة المنسدلة المخفية للتوافقية التامة مع الأكواد الحالية
     const sel = document.getElementById('custCity');
-    sel.innerHTML = '<option value="">-- اختر مدينتك --</option>' +
-      shippingZones.map(z =>
-        `<option value="${z.city}" data-price="${z.price}">${z.city} — ${z.price === 0 ? 'شحن مجاني' : z.price.toLocaleString('ar-IQ') + ' د'}</option>`
-      ).join('');
-  } catch(e) { console.warn('لم يتم جلب مناطق الشحن:', e); }
+    if (sel) {
+      sel.innerHTML = '<option value="">-- اختر مدينتك --</option>' +
+        shippingZones.map(z =>
+          `<option value="${z.city}" data-price="${z.price}">${z.city} — ${z.price === 0 ? 'شحن مجاني' : z.price.toLocaleString('en-US') + ' د'}</option>`
+        ).join('');
+    }
+    
+    // 2. ملء شبكة البطاقات الحديثة والمصممة بأسلوب عصري
+    const grid = document.getElementById('cityCardsGrid');
+    if (grid) {
+      if (shippingZones.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding: 1.5rem 0;">لا توجد مدن توصيل متاحة حالياً</div>';
+        return;
+      }
+      
+      grid.innerHTML = shippingZones.map(z => {
+        const priceText = z.price === 0 ? 'شحن مجاني' : `${z.price.toLocaleString('en-US')} د`;
+        return `
+          <div class="city-card" data-city="${z.city}" onclick="selectCityCard('${z.city}', ${z.price}, this)">
+            <i class="fa fa-map-marker-alt city-card-icon"></i>
+            <div class="city-card-name">${z.city}</div>
+            <div class="city-card-price">${priceText}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch(e) { 
+    console.warn('لم يتم جلب مناطق الشحن:', e);
+    const grid = document.getElementById('cityCardsGrid');
+    if (grid) {
+      grid.innerHTML = '<div style="text-align:center; color:var(--red); grid-column:1/-1; padding: 1.5rem 0;"><i class="fa fa-exclamation-circle"></i> خطأ في جلب مدن التوصيل</div>';
+    }
+  }
+}
+
+// دالة اختيار بطاقة المدينة وتحديث الحقول المخفية والمعاينة
+function selectCityCard(city, price, cardElement) {
+  // 1. تحديث القيمة في القائمة المنسدلة المخفية
+  const sel = document.getElementById('custCity');
+  if (sel) {
+    sel.value = city;
+  }
+  
+  // 2. تحديث الحالة البصرية النشطة للبطاقة المحددة
+  document.querySelectorAll('.city-card').forEach(card => card.classList.remove('active'));
+  if (cardElement) {
+    cardElement.classList.add('active');
+  }
+  
+  // 3. تحديث سعر الشحن والتحقق من صحة النموذج وإجمالي السعر
+  selectedShippingPrice = price;
+  
+  const preview = document.getElementById('shippingPreview');
+  if (city && preview) {
+    preview.style.display = 'block';
+    document.getElementById('spCity').textContent = city;
+    document.getElementById('spCityPrice').textContent = price === 0 ? 'مجاني 🎉' : `${price.toLocaleString('en-US')} دينار`;
+  } else if (preview) {
+    preview.style.display = 'none';
+  }
+  
+  validateStep2();
+  updateFinalSummary();
+}
+
+// دالة تصفية/البحث عن البطاقات ديناميكياً
+function filterCityCards() {
+  const query = document.getElementById('citySearchInput').value.trim().toLowerCase();
+  const cards = document.querySelectorAll('.city-card');
+  cards.forEach(card => {
+    const cityName = card.dataset.city.toLowerCase();
+    if (cityName.includes(query)) {
+      card.style.display = 'flex';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// دالة تصفير اختيار المدينة وإعادة تعيين البطاقات وحقول البحث
+function resetCitySelection() {
+  const searchInput = document.getElementById('citySearchInput');
+  if (searchInput) searchInput.value = '';
+  
+  const cards = document.querySelectorAll('.city-card');
+  cards.forEach(card => {
+    card.classList.remove('active');
+    card.style.display = 'flex';
+  });
+  
+  const preview = document.getElementById('shippingPreview');
+  if (preview) preview.style.display = 'none';
+  
+  const cityEl = document.getElementById('custCity');
+  if (cityEl) cityEl.value = '';
 }
 
 function onCityChange() {
@@ -26,7 +118,7 @@ function onCityChange() {
   if (city) {
     preview.style.display = 'block';
     document.getElementById('spCity').textContent = city;
-    document.getElementById('spCityPrice').textContent = price === 0 ? 'مجاني 🎉' : `${price.toLocaleString('ar-IQ')} دينار`;
+    document.getElementById('spCityPrice').textContent = price === 0 ? 'مجاني 🎉' : `${price.toLocaleString('en-US')} دينار`;
   } else {
     preview.style.display = 'none';
   }
@@ -36,6 +128,35 @@ function onCityChange() {
   updateFinalSummary();
 }
 
+function updateCheckoutSummary() {
+  const container = document.getElementById('checkoutSummaryItems');
+  if (!container) return;
+  
+  if (cart.length === 0) {
+    container.innerHTML = '<div class="summary-empty"><i class="fa fa-shopping-bag"></i><p>السلة فارغة</p></div>';
+    return;
+  }
+  
+  container.innerHTML = cart.map(item => `
+    <div class="summary-item">
+      <div class="summary-item-img">
+        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}">` : '🛍️'}
+      </div>
+      <div class="summary-item-info">
+        <h4 class="summary-item-name">${item.name}</h4>
+        <div class="summary-item-price-qty">
+          <span>الكمية: ${item.quantity}</span>
+          <span style="margin:0 0.4rem; opacity:0.5">•</span>
+          <span>${item.price.toLocaleString('en-US')} د</span>
+        </div>
+      </div>
+      <div class="summary-item-total">
+        ${(item.price * item.quantity).toLocaleString('en-US')} د
+      </div>
+    </div>
+  `).join('');
+}
+
 function updateFinalSummary() {
   const itemsTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const count      = cart.reduce((s, i) => s + i.quantity, 0);
@@ -43,11 +164,28 @@ function updateFinalSummary() {
   const shipping   = selectedShippingPrice;
   const grandTotal = itemsTotal + shipping;
   
-  document.getElementById('fsCount').textContent      = count;
-  document.getElementById('fsItemsTotal').textContent = itemsTotal.toLocaleString('ar-IQ') + ' د';
-  document.getElementById('fsCityName').textContent   = city || '—';
-  document.getElementById('fsShipping').textContent   = shipping === 0 ? 'مجاني 🎉' : `${shipping.toLocaleString('ar-IQ')} د`;
-  document.getElementById('fsTotal').textContent      = grandTotal.toLocaleString('ar-IQ') + ' د';
+  if (document.getElementById('fsCount')) document.getElementById('fsCount').textContent = count;
+  if (document.getElementById('fsItemsTotal')) document.getElementById('fsItemsTotal').textContent = itemsTotal.toLocaleString('en-US') + ' د';
+  if (document.getElementById('fsCityName')) document.getElementById('fsCityName').textContent = city || '—';
+  if (document.getElementById('fsShipping')) document.getElementById('fsShipping').textContent = shipping === 0 ? 'مجاني 🎉' : `${shipping.toLocaleString('en-US')} د`;
+  if (document.getElementById('fsTotal')) document.getElementById('fsTotal').textContent = grandTotal.toLocaleString('en-US') + ' د';
+
+  // Persistent sidebar elements
+  if (document.getElementById('sideSubtotal')) document.getElementById('sideSubtotal').textContent = itemsTotal.toLocaleString('en-US') + ' د';
+  if (document.getElementById('sideShipping')) {
+    if (!city) {
+      document.getElementById('sideShipping').textContent = 'يحدد بعد اختيار المدينة';
+      document.getElementById('sideShipping').style.fontSize = '0.85rem';
+      document.getElementById('sideShipping').style.color = 'var(--txt2)';
+    } else {
+      document.getElementById('sideShipping').textContent = shipping === 0 ? 'مجاني 🎉' : `${shipping.toLocaleString('en-US')} د`;
+      document.getElementById('sideShipping').style.fontSize = '';
+      document.getElementById('sideShipping').style.color = '';
+    }
+  }
+  if (document.getElementById('sideTotal')) document.getElementById('sideTotal').textContent = grandTotal.toLocaleString('en-US') + ' د';
+
+  updateCheckoutSummary();
 }
 
 function startCheckout() {
@@ -57,12 +195,63 @@ function startCheckout() {
   updateCheckoutUI();
   document.getElementById('checkoutOverlay').classList.add('open');
   fetchShippingZones(); // جلب المدن عند كل فتح لضمان البيانات الحديثة
+  
+  // Clear left-over validation classes on open
+  ['fgName', 'fgPhone', 'fgAddress', 'fgCity'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('valid', 'invalid');
+  });
+  
+  resetCitySelection();
+  
+  validateStep1();
+  validateStep2();
   updateFinalSummary();
 }
 
 function closeCheckout() { document.getElementById('checkoutOverlay').classList.remove('open'); }
 
 function nextStep(step) {
+  // If moving forward from step 1
+  if (currentStep === 1 && step === 2) {
+    const name = document.getElementById('custName').value.trim();
+    const phone = document.getElementById('custPhone').value.trim();
+    const nameValid = name.length >= 3;
+    const phoneValid = /^(09[1-5]|\+2189[1-5]|002189[1-5])[0-9]{7}$/.test(phone);
+    
+    let hasError = false;
+    if (!nameValid) {
+      const fg = document.getElementById('fgName');
+      fg.classList.add('invalid', 'shake-error');
+      setTimeout(() => fg.classList.remove('shake-error'), 400);
+      hasError = true;
+    }
+    if (!phoneValid) {
+      const fg = document.getElementById('fgPhone');
+      fg.classList.add('invalid', 'shake-error');
+      setTimeout(() => fg.classList.remove('shake-error'), 400);
+      hasError = true;
+    }
+    if (hasError) {
+      showToast('الرجاء تعبئة بيانات الاسم والهاتف بشكل صحيح لتتمكن من المتابعة', 'error');
+      return;
+    }
+  }
+  
+  // If moving forward from step 2
+  if (currentStep === 2 && step === 3) {
+    const city = document.getElementById('custCity').value;
+    const cityValid = city !== '';
+    
+    if (!cityValid) {
+      const fg = document.getElementById('fgCity');
+      fg.classList.add('invalid', 'shake-error');
+      setTimeout(() => fg.classList.remove('shake-error'), 400);
+      showToast('الرجاء اختيار المدينة لتحديد سعر التوصيل', 'error');
+      return;
+    }
+  }
+
   currentStep = step;
   updateCheckoutUI();
 }
@@ -88,22 +277,48 @@ function validateStep1() {
   const phone = document.getElementById('custPhone').value.trim();
   
   const nameValid = name.length >= 3;
-  const phoneValid = phone.length >= 10 && /^[0-9+]+$/.test(phone); // Basic phone validation
+  const phoneValid = /^(09[1-5]|\+2189[1-5]|002189[1-5])[0-9]{7}$/.test(phone);
   
-  document.getElementById('fgName').classList.toggle('valid', nameValid);
-  document.getElementById('fgPhone').classList.toggle('valid', phoneValid);
+  if (name.length > 0) {
+    document.getElementById('fgName').classList.toggle('valid', nameValid);
+    document.getElementById('fgName').classList.toggle('invalid', !nameValid);
+  } else {
+    document.getElementById('fgName').classList.remove('valid', 'invalid');
+  }
   
-  document.getElementById('btnNext1').disabled = !(nameValid && phoneValid);
+  if (phone.length > 0) {
+    document.getElementById('fgPhone').classList.toggle('valid', phoneValid);
+    document.getElementById('fgPhone').classList.toggle('invalid', !phoneValid);
+  } else {
+    document.getElementById('fgPhone').classList.remove('valid', 'invalid');
+  }
 }
 
 function validateStep2() {
   const addr = document.getElementById('custAddress').value.trim();
   const city = document.getElementById('custCity').value;
-  const addrValid = addr.length >= 10;
   const cityValid = city !== '';
   
-  document.getElementById('fgAddress').classList.toggle('valid', addrValid);
-  document.getElementById('btnNext2').disabled = !(addrValid && cityValid);
+  if (addr.length > 0) {
+    document.getElementById('fgAddress').classList.add('valid');
+    document.getElementById('fgAddress').classList.remove('invalid');
+  } else {
+    document.getElementById('fgAddress').classList.remove('valid', 'invalid');
+  }
+  
+  if (cityValid) {
+    document.getElementById('fgCity').classList.add('valid');
+    document.getElementById('fgCity').classList.remove('invalid');
+  } else {
+    document.getElementById('fgCity').classList.remove('valid', 'invalid');
+  }
+}
+
+function selectPaymentMethod(method, element) {
+  if (method === 'zain') {
+    showToast('زين كاش سيتوفر قريباً! الدفع متاح حالياً عند الاستلام فقط.', 'info');
+    return;
+  }
 }
 
 async function submitOrder() {
@@ -128,14 +343,12 @@ async function submitOrder() {
     cart = []; saveCart();
     closeCheckout();
     
-    // Show success screen with order ID
-    showSuccessScreen(data.order?._id || '');
+    // Show success screen with order ID/Number and phone
+    showSuccessScreen(data.order?.orderNumber || data.order?._id || '', phone);
     
     // Reset forms
     ['custName','custPhone','custAddress','custNotes'].forEach(id => document.getElementById(id).value = '');
-    const cityEl = document.getElementById('custCity');
-    if (cityEl) cityEl.selectedIndex = 0;
-    document.getElementById('shippingPreview').style.display = 'none';
+    resetCitySelection();
     selectedShippingPrice = 0;
     document.querySelectorAll('.form-group.valid').forEach(el => el.classList.remove('valid'));
     
@@ -146,8 +359,12 @@ async function submitOrder() {
 }
 
 // --- Order Success Screen ---
-function showSuccessScreen(orderId) {
+function showSuccessScreen(orderId, phone) {
   document.getElementById('successOrderId').textContent = orderId || '—';
+  const trackBtn = document.querySelector('.success-actions .btn-track');
+  if (trackBtn && orderId && phone) {
+    trackBtn.href = `/track.html?phone=${encodeURIComponent(phone)}&orderId=${encodeURIComponent(orderId)}`;
+  }
   document.getElementById('successOverlay').classList.add('open');
   launchConfetti();
 }

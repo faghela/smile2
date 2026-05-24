@@ -31,7 +31,7 @@ function moveGlow(e) {
   glow.style.transform = `translate(calc(-50% + ${x*0.1}px), calc(-50% + ${y*0.1}px))`;
 }
 
-// --- Header Blur on Scroll ---
+// --- Header Blur on Scroll & Progress Indicator ---
 window.addEventListener('scroll', () => {
   const header = document.getElementById('mainHeader');
   if(window.scrollY > 50) {
@@ -40,6 +40,14 @@ window.addEventListener('scroll', () => {
   } else {
     header.style.background = 'var(--glass)';
     header.style.boxShadow = 'none';
+  }
+
+  const scrollProgress = document.getElementById('scrollProgress');
+  if (scrollProgress) {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+    scrollProgress.style.width = scrolled + "%";
   }
 });
 

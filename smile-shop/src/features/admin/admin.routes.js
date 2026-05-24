@@ -12,9 +12,17 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const { ownerOnly } = adminAuth;
+
 router.post('/login', loginLimiter, adminController.login);
 router.get('/stats', adminAuth, adminController.getStats);
 router.get('/stats/top-products', adminAuth, adminController.getTopProducts);
 router.get('/stats/monthly', adminAuth, adminController.getMonthlyStats);
+
+// Admin Management (Owner Only)
+router.get('/admins', adminAuth, ownerOnly, adminController.getAdmins);
+router.post('/admins', adminAuth, ownerOnly, adminController.createAdmin);
+router.put('/admins/:id', adminAuth, ownerOnly, adminController.updateAdmin);
+router.delete('/admins/:id', adminAuth, ownerOnly, adminController.deleteAdmin);
 
 module.exports = router;

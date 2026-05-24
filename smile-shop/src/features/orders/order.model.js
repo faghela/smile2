@@ -10,10 +10,11 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
+    orderNumber:     { type: String, unique: true, sparse: true },
     items:           { type: [orderItemSchema], required: true },
     customerName:    { type: String, required: true, trim: true },
     customerPhone:   { type: String, required: true, trim: true },
-    customerAddress: { type: String, required: true, trim: true },
+    customerAddress: { type: String, required: false, trim: true },
     city:            { type: String, default: '' },
     shippingPrice:   { type: Number, default: 0 },
     notes:           { type: String, default: '' },
@@ -28,5 +29,6 @@ const orderSchema = new mongoose.Schema({
 // Indexes
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ customerPhone: 1, orderNumber: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

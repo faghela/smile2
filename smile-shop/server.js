@@ -41,7 +41,11 @@ app.use(helmet({
 }));
 
 // تسجيل الطلبات (Logging)
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'production') {
+    app.use(morgan('combined'));
+} else {
+    app.use(morgan('dev'));
+}
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -60,7 +64,15 @@ app.use('/api/', globalLimiter);
 // ─── MongoDB ──────────────────────────────────────────────────────────────────
 const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/smile_shop';
 mongoose.connect(mongoURI)
-    .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB'))
+    .then(async () => {
+        console.log('✅ تم الاتصال بقاعدة بيانات MongoDB');
+        try {
+            const { seedDefaultAdmin } = require('./src/features/admin/admin.controller');
+            await seedDefaultAdmin();
+        } catch (seedErr) {
+            console.error('❌ خطأ أثناء تشغيل بذر المشرف الافتراضي:', seedErr.message);
+        }
+    })
     .catch(err => console.error('❌ خطأ في الاتصال:', err.message));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
@@ -69,6 +81,17 @@ app.use('/api/orders',    orderRoutes);
 app.use('/api/admin',     adminRoutes);
 app.use('/api/upload',    uploadRoutes);
 app.use('/api/shipping',  shippingRoutes);
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+    console.error('[SERVER ERROR]:', err);
+    if (!res.headersSent) {
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ داخلي في الخادم، تم تسجيله وجاري العمل على إصلاحه.'
+        });
+    }
+});
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {

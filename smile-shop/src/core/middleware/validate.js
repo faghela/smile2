@@ -40,9 +40,7 @@ const orderSchema = Joi.object({
         'string.empty': 'رقم الهاتف مطلوب',
         'string.pattern.base': 'رقم الهاتف غير صالح'
     }),
-    customerAddress: Joi.string().required().trim().messages({
-        'string.empty': 'العنوان مطلوب'
-    }),
+    customerAddress: Joi.string().allow('', null).trim().default(''),
     city: Joi.string().allow('', null), // المدينة المختارة للتوصيل
     notes: Joi.string().allow('', null)
 });

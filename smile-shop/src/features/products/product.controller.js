@@ -88,6 +88,9 @@ const createProduct = async (req, res) => {
         await product.save();
         res.status(201).json(product);
     } catch (err) {
+        if (req.body.imageUrl) {
+            deleteLocalImage(req.body.imageUrl);
+        }
         res.status(400).json({ message: err.message });
     }
 };
