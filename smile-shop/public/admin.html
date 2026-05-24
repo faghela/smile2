@@ -96,8 +96,20 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>العميل</th><th>الهاتف</th><th>المدينة</th><th>تفاصيل</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th><th>حذف</th></tr></thead>
-          <tbody id="orderTbl"><tr><td colspan="8" class="no-data">جاري التحميل...</td></tr></tbody>
+          <thead>
+            <tr>
+              <th style="width: 45px; text-align: center;"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders(this.checked)"></th>
+              <th>العميل</th>
+              <th>الهاتف</th>
+              <th>المدينة</th>
+              <th>تفاصيل</th>
+              <th>الإجمالي</th>
+              <th>الحالة</th>
+              <th>التاريخ</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody id="orderTbl"><tr><td colspan="9" class="no-data">جاري التحميل...</td></tr></tbody>
         </table>
       </div>
       <div class="pagination">
@@ -217,6 +229,24 @@
     <button class="btn-grad" id="saveAdminBtn" onclick="saveAdmin()"><i class="fa fa-save" style="margin-left:.5rem"></i>حفظ حساب المشرف</button>
   </div>
 </div>
+</div>
+
+<!-- Bulk Actions Bar for Orders -->
+<div class="bulk-actions-bar" id="bulkActionsBar">
+  <div class="bulk-info">
+    <i class="fa fa-info-circle"></i>
+    <span>تم تحديد <b id="selectedCount">0</b> طلبات</span>
+  </div>
+  <div class="bulk-btns">
+    <span>تغيير الحالة إلى:</span>
+    <button class="bulk-btn pending" onclick="bulkUpdateStatus('pending')">معلق</button>
+    <button class="bulk-btn processing" onclick="bulkUpdateStatus('processing')">قيد التجهيز</button>
+    <button class="bulk-btn shipped" onclick="bulkUpdateStatus('shipped')">في الطريق</button>
+    <button class="bulk-btn delivered" onclick="bulkUpdateStatus('delivered')">تم التوصيل</button>
+    <button class="bulk-btn cancelled" onclick="bulkUpdateStatus('cancelled')">ملغي</button>
+    <button class="bulk-btn delete-selected owner-only-btn" id="bulkDeleteBtn" onclick="bulkDeleteOrders()"><i class="fa fa-trash"></i> حذف المحدد</button>
+  </div>
+  <button class="bulk-close" onclick="toggleSelectAllOrders(false)" title="إلغاء التحديد"><i class="fa fa-times"></i></button>
 </div>
 
 <div id="toasts"></div>

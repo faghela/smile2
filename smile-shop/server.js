@@ -25,6 +25,22 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// مرونة الـ CSP لقبول دومينات الـ API الخارجية
+const allowedConnectSources = ["'self'"];
+if (process.env.CSP_CONNECT_SRC) {
+    const extra = process.env.CSP_CONNECT_SRC.split(/[\s,]+/);
+    extra.forEach(src => {
+        if (src.trim()) allowedConnectSources.push(src.trim());
+    });
+} else {
+    if (process.env.CLIENT_URL) {
+        try {
+            const origin = new URL(process.env.CLIENT_URL).origin;
+            if (!allowedConnectSources.includes(origin)) allowedConnectSources.push(origin);
+        } catch (e) {}
+    }
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
@@ -35,7 +51,7 @@ app.use(helmet({
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
       "img-src": ["'self'", "data:", "blob:", "http:", "https:"],
-      "connect-src": ["'self'"],
+      "connect-src": allowedConnectSources,
     },
   }
 }));

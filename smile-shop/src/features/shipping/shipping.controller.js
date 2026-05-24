@@ -27,10 +27,30 @@ const createShippingZone = async (req, res) => {
 const updateShippingZone = async (req, res) => {
     try {
         const { city, price } = req.body;
-        const safeCity = city ? escapeHTML(city.trim()) : undefined;
+        
+        const updateData = {};
+        if (city !== undefined) {
+            if (!city.trim() || city.trim().length < 2) {
+                return res.status(400).json({ message: 'اسم المدينة يجب أن لا يقل عن حرفين' });
+            }
+            updateData.city = escapeHTML(city.trim());
+        }
+        
+        if (price !== undefined) {
+            const parsedPrice = Number(price);
+            if (isNaN(parsedPrice) || parsedPrice < 0) {
+                return res.status(400).json({ message: 'سعر التوصيل يجب أن يكون رقماً صحيحاً وموجباً' });
+            }
+            updateData.price = parsedPrice;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'لم يتم توفير حقول للتحديث' });
+        }
+
         const zone = await ShippingZone.findByIdAndUpdate(
             req.params.id,
-            { city: safeCity, price: Number(price) },
+            updateData,
             { new: true, runValidators: true }
         );
         if (!zone) return res.status(404).json({ message: 'المنطقة غير موجودة' });

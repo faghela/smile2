@@ -1,4 +1,4 @@
-const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || 'http://localhost:3000/api';
+const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
 let token = localStorage.getItem('smile_admin_token') || '';
 let revenueChart = null;
 let monthlyChart = null;
@@ -7,6 +7,12 @@ let prodPage = 1;
 let prodTotalPages = 1;
 let ordPage = 1;
 let ordTotalPages = 1;
+
+let loadedProducts = [];
+let loadedShippingZones = [];
+let loadedAdmins = [];
+let loadedOrders = [];
+
 
 const statLabels = {pending:'معلق',processing:'قيد التجهيز',shipped:'في الطريق',delivered:'تم التوصيل',cancelled:'ملغي'};
 
@@ -134,6 +140,7 @@ async function loadProducts(){
     const res = await fetch(`${API}/products?page=${prodPage}&limit=10`);
     const result = await res.json();
     const products = result.data || result;
+    loadedProducts = products; // Store globally to prevent XSS in onclick
     
     if (result.pagination) {
         prodTotalPages = result.pagination.totalPages || 1;
@@ -152,11 +159,14 @@ async function loadProducts(){
         <td style="color:#9f67ff;font-weight:700">${p.price.toLocaleString('en-US')} د</td>
         <td style="color:${p.stock<5?'#f59e0b':'#10b981'}">${p.stock}</td>
         <td>
-          <button class="act-btn edit" onclick='openProdModal(${JSON.stringify(p)})'><i class="fa fa-edit"></i></button>
+          <button class="act-btn edit" onclick="openProdModal('${p._id}')"><i class="fa fa-edit"></i></button>
           <button class="act-btn del" onclick="delProduct('${p._id}','${p.name}')"><i class="fa fa-trash"></i></button>
         </td>
       </tr>`).join('');
-  } catch(e){ toast('خطأ في تحميل المنتجات','e'); }
+  } catch(e){ 
+    console.error('loadProducts failed:', e);
+    toast('خطأ في تحميل المنتجات','e'); 
+  }
 }
 
 function chgProdPage(delta) {
@@ -173,7 +183,8 @@ function handleFileSelect(input) {
     }
 }
 
-function openProdModal(p=null){
+function openProdModal(pOrId=null){
+  const p = typeof pOrId === 'string' ? loadedProducts.find(x => x._id === pOrId) : pOrId;
   document.getElementById('modalTitle').textContent = p ? 'تعديل منتج' : 'إضافة منتج';
   document.getElementById('editId').value = p?p._id:'';
   document.getElementById('pName').value = p?p.name:'';
@@ -257,6 +268,7 @@ async function loadOrders(){
     const res = await fetch(`${API}/orders?page=${ordPage}&limit=10`,{headers:authH()});
     const result = await res.json();
     const orders = result.data || result;
+    loadedOrders = orders; // Store globally to prevent XSS
     
     if (result.pagination) {
         ordTotalPages = result.pagination.totalPages || 1;
@@ -265,26 +277,48 @@ async function loadOrders(){
         document.getElementById('ordNextBtn').disabled = ordPage >= ordTotalPages;
     }
 
+    const selectAll = document.getElementById('selectAllOrders');
+    if (selectAll) selectAll.checked = false;
+
     const tb = document.getElementById('orderTbl');
-    if(!orders.length){ tb.innerHTML='<tr><td colspan="8" class="no-data">لا توجد طلبات بعد</td></tr>'; return; }
+    if(!orders.length){ 
+        tb.innerHTML='<tr><td colspan="9" class="no-data">لا توجد طلبات بعد</td></tr>'; 
+        onOrderSelectChange();
+        return; 
+    }
     
     const role = localStorage.getItem('smile_admin_role') || 'editor';
     tb.innerHTML = orders.map(o=>`
       <tr>
+        <td style="text-align: center;"><input type="checkbox" class="order-chk" data-id="${o._id}" onchange="onOrderSelectChange()"></td>
         <td style="font-weight:600">${o.customerName}</td>
         <td style="color:var(--txt2)">${o.customerPhone}</td>
         <td><span class="badge processing">${o.city || '—'}</span></td>
-        <td><button class="act-btn edit" onclick="openOrderModal('${encodeURIComponent(JSON.stringify(o))}')"><i class="fa fa-eye"></i> تفاصيل</button></td>
+        <td><button class="act-btn edit" onclick="openOrderModal('${o._id}')"><i class="fa fa-eye"></i> تفاصيل</button></td>
         <td style="color:#9f67ff;font-weight:700">${o.totalPrice.toLocaleString('en-US')} د</td>
         <td>
-          <select class="status-sel" onchange="updateStatus('${o._id}',this.value)">
-            ${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statLabels[s]}</option>`).join('')}
-          </select>
+          <div class="status-dropdown">
+            <button class="status-badge-btn ${o.status}" onclick="toggleStatusDropdown(event, '${o._id}')">
+              <span>${statLabels[o.status]}</span> <i class="fa fa-chevron-down" style="font-size:0.7rem; opacity:0.8"></i>
+            </button>
+            <div class="status-dropdown-menu" id="status-menu-${o._id}">
+              ${['pending','processing','shipped','delivered','cancelled'].map(s=>`
+                <div class="status-dropdown-item ${s} ${o.status === s ? 'active' : ''}" onclick="updateStatus('${o._id}','${s}')">
+                  ${statLabels[s]}
+                </div>
+              `).join('')}
+            </div>
+          </div>
         </td>
         <td style="color:var(--txt2);font-size:.8rem">${new Date(o.createdAt).toLocaleDateString('en-US')}</td>
         <td>${role === 'owner' ? `<button class="act-btn del" onclick="delOrder('${o._id}')"><i class="fa fa-trash"></i></button>` : '—'}</td>
       </tr>`).join('');
-  } catch(e){ toast('خطأ في تحميل الطلبات','e'); }
+      
+      onOrderSelectChange();
+  } catch(e){
+    console.error('loadOrders failed:', e);
+    toast('خطأ في تحميل الطلبات','e');
+  }
 }
 
 function chgOrdPage(delta) {
@@ -298,7 +332,10 @@ async function updateStatus(id, status){
     const res = await fetch(`${API}/orders/${id}/status`,{method:'PUT',headers:authH(),body:JSON.stringify({status})});
     if(!res.ok) throw new Error((await res.json()).message);
     toast('تم تحديث الحالة','s'); loadStats();
-  } catch(e){ toast(e.message,'e'); }
+  } catch(e){
+    console.error('updateStatus failed:', e);
+    toast(e.message,'e');
+  }
 }
 
 async function delOrder(id){
@@ -307,11 +344,14 @@ async function delOrder(id){
     const res = await fetch(`${API}/orders/${id}`,{method:'DELETE',headers:authH()});
     if(!res.ok) throw new Error((await res.json()).message);
     toast('تم حذف الطلب','s'); loadOrders(); loadStats();
-  } catch(e){ toast(e.message,'e'); }
+  } catch(e){
+    console.error('delOrder failed:', e);
+    toast(e.message,'e');
+  }
 }
 
-function openOrderModal(oStr){
-  const o = JSON.parse(decodeURIComponent(oStr));
+function openOrderModal(oOrId){
+  const o = typeof oOrId === 'string' ? loadedOrders.find(x => x._id === oOrId) : oOrId;
   const html = `
     <div style="margin-bottom:1rem; font-size: 0.95rem;">
       <p><strong>رقم الطلب:</strong> ${o.orderNumber || o._id}</p>
@@ -397,6 +437,7 @@ async function loadShippingZones() {
   try {
     const res = await fetch(`${API}/shipping`);
     const zones = await res.json();
+    loadedShippingZones = zones; // Store globally to prevent XSS
     const tb = document.getElementById('shippingTbl');
     if (!zones.length) { tb.innerHTML = '<tr><td colspan="3" class="no-data">لا توجد مناطق بعد — أضف مدينتك الأولى</td></tr>'; return; }
     tb.innerHTML = zones.map(z => `
@@ -404,14 +445,18 @@ async function loadShippingZones() {
         <td style="font-weight:600">${z.city}</td>
         <td style="color:${z.price===0?'var(--green)':'#9f67ff'};font-weight:700">${z.price === 0 ? 'مجاني 🎉' : z.price.toLocaleString('en-US') + ' د'}</td>
         <td>
-          <button class="act-btn edit" onclick='openShippingModal(${JSON.stringify(z)})'><i class="fa fa-edit"></i></button>
+          <button class="act-btn edit" onclick="openShippingModal('${z._id}')"><i class="fa fa-edit"></i></button>
           <button class="act-btn del" onclick="delShippingZone('${z._id}','${z.city}')"><i class="fa fa-trash"></i></button>
         </td>
       </tr>`).join('');
-  } catch(e) { toast('خطأ في تحميل مناطق الشحن', 'e'); }
+  } catch(e) {
+    console.error('loadShippingZones failed:', e);
+    toast('خطأ في تحميل مناطق الشحن', 'e');
+  }
 }
 
-function openShippingModal(z = null) {
+function openShippingModal(zOrId = null) {
+  const z = typeof zOrId === 'string' ? loadedShippingZones.find(x => x._id === zOrId) : zOrId;
   document.getElementById('shippingModalTitle').textContent = z ? 'تعديل منطقة' : 'إضافة مدينة';
   document.getElementById('shippingEditId').value = z ? z._id : '';
   document.getElementById('sCity').value  = z ? z.city  : '';
@@ -422,7 +467,6 @@ function closeShippingModal() { document.getElementById('shippingModal').classLi
 
 async function saveShippingZone() {
   const btn = document.getElementById('saveShippingBtn');
-  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   try {
     const id    = document.getElementById('shippingEditId').value;
     const city  = document.getElementById('sCity').value.trim();
@@ -466,6 +510,7 @@ async function loadAdmins() {
     const res = await fetch(`${API}/admin/admins`, { headers: authH() });
     if (!res.ok) throw new Error((await res.json()).message || 'فشل تحميل المشرفين');
     const admins = await res.json();
+    loadedAdmins = admins; // Store globally to prevent XSS
     const tb = document.getElementById('adminTbl');
     if (!admins.length) { tb.innerHTML = '<tr><td colspan="4" class="no-data">لا يوجد مشرفين</td></tr>'; return; }
     
@@ -475,14 +520,18 @@ async function loadAdmins() {
         <td><span class="badge ${a.role === 'owner' ? 'delivered' : 'processing'}">${a.role === 'owner' ? 'مالك (Owner)' : 'محرر (Editor)'}</span></td>
         <td style="color:var(--txt2);font-size:.8rem">${new Date(a.createdAt).toLocaleDateString('en-US')}</td>
         <td>
-          <button class="act-btn edit" onclick='openAdminModal(${JSON.stringify(a)})'><i class="fa fa-edit"></i></button>
+          <button class="act-btn edit" onclick="openAdminModal('${a._id}')"><i class="fa fa-edit"></i></button>
           <button class="act-btn del" onclick="delAdmin('${a._id}','${a.username}')"><i class="fa fa-trash"></i></button>
         </td>
       </tr>`).join('');
-  } catch (e) { toast(e.message, 'e'); }
+  } catch (e) {
+    console.error('loadAdmins failed:', e);
+    toast(e.message, 'e');
+  }
 }
 
-function openAdminModal(a = null) {
+function openAdminModal(aOrId = null) {
+  const a = typeof aOrId === 'string' ? loadedAdmins.find(x => x._id === aOrId) : aOrId;
   document.getElementById('adminModalTitle').textContent = a ? 'تعديل حساب مشرف' : 'إضافة مشرف جديد';
   document.getElementById('adminEditId').value = a ? a._id : '';
   document.getElementById('aUsername').value = a ? a.username : '';
@@ -552,5 +601,124 @@ async function delAdmin(id, name) {
     loadAdmins();
   } catch (e) {
     toast(e.message, 'e');
+  }
+}
+
+// ── Custom Dropdown & Bulk Actions logic ──────────────────────────────────────
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.status-dropdown')) {
+    document.querySelectorAll('.status-dropdown-menu.open').forEach(menu => {
+      menu.classList.remove('open');
+    });
+  }
+});
+
+function toggleStatusDropdown(event, orderId) {
+  event.stopPropagation();
+  const currentMenu = document.getElementById(`status-menu-${orderId}`);
+  const isOpen = currentMenu.classList.contains('open');
+  
+  document.querySelectorAll('.status-dropdown-menu').forEach(menu => {
+    menu.classList.remove('open');
+  });
+  
+  if (!isOpen) {
+    currentMenu.classList.add('open');
+  }
+}
+
+function onOrderSelectChange() {
+  const checkedChks = document.querySelectorAll('.order-chk:checked');
+  const count = checkedChks.length;
+  
+  const selectAll = document.getElementById('selectAllOrders');
+  const totalChks = document.querySelectorAll('.order-chk');
+  
+  if (selectAll && totalChks.length > 0) {
+    selectAll.checked = (count === totalChks.length);
+  }
+  
+  const bar = document.getElementById('bulkActionsBar');
+  const countEl = document.getElementById('selectedCount');
+  
+  if (bar) {
+    if (count > 0) {
+      if (countEl) countEl.textContent = count;
+      bar.classList.add('active');
+      
+      // إخفاء زر الحذف الجماعي لغير المالكين
+      const role = localStorage.getItem('smile_admin_role') || 'editor';
+      const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+      if (bulkDeleteBtn) {
+        bulkDeleteBtn.style.display = (role === 'owner') ? 'block' : 'none';
+      }
+    } else {
+      bar.classList.remove('active');
+    }
+  }
+}
+
+function toggleSelectAllOrders(checked) {
+  document.querySelectorAll('.order-chk').forEach(chk => {
+    chk.checked = checked;
+  });
+  onOrderSelectChange();
+}
+
+async function bulkUpdateStatus(status) {
+  const checkedChks = document.querySelectorAll('.order-chk:checked');
+  const ids = Array.from(checkedChks).map(chk => chk.dataset.id);
+  if (!ids.length) return;
+  
+  try {
+    toast('جاري تحديث الحالات...', 's');
+    await Promise.all(ids.map(id => 
+      fetch(`${API}/orders/${id}/status`, {
+        method: 'PUT',
+        headers: authH(),
+        body: JSON.stringify({ status })
+      }).then(res => {
+        if (!res.ok) throw new Error('فشل تحديث بعض الطلبات');
+        return res.json();
+      })
+    ));
+    toast('تم تحديث الطلبات المحددة بنجاح', 's');
+    loadOrders();
+    loadStats();
+  } catch(e) {
+    console.error(e);
+    toast(e.message || 'حدث خطأ أثناء التحديث الجماعي', 'e');
+  }
+}
+
+async function bulkDeleteOrders() {
+  const role = localStorage.getItem('smile_admin_role') || 'editor';
+  if (role !== 'owner') {
+    toast('عذراً، صلاحية المالك مطلوبة لحذف الطلبات', 'e');
+    return;
+  }
+  const checkedChks = document.querySelectorAll('.order-chk:checked');
+  const ids = Array.from(checkedChks).map(chk => chk.dataset.id);
+  if (!ids.length) return;
+  
+  if (!confirm(`هل أنت متأكد من حذف ${ids.length} طلبات نهائياً واستعادة مخزونها؟`)) return;
+  
+  try {
+    toast('جاري حذف الطلبات...', 's');
+    await Promise.all(ids.map(id => 
+      fetch(`${API}/orders/${id}`, {
+        method: 'DELETE',
+        headers: authH()
+      }).then(res => {
+        if (!res.ok) throw new Error('فشل حذف بعض الطلبات');
+        return res.json();
+      })
+    ));
+    toast('تم حذف الطلبات بنجاح', 's');
+    loadOrders();
+    loadStats();
+  } catch(e) {
+    console.error(e);
+    toast(e.message || 'حدث خطأ أثناء الحذف الجماعي', 'e');
   }
 }

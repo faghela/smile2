@@ -76,10 +76,10 @@ npm install
 PORT=3000
 MONGO_URI=mongodb://127.0.0.1:27017/smile_shop
 JWT_SECRET=super_secret_key_change_me
-INITIAL_OWNER_EMAIL=admin@smile.com
-INITIAL_OWNER_PASSWORD=AdminPassword123
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=your_strong_password
 ```
-*ملاحظة: سيقوم النظام بإنشاء حساب المالك الافتراضي (Owner) تلقائياً عند أول تشغيل بناءً على هذه المتغيرات.*
+*ملاحظة: سيقوم النظام بإنشاء حساب المشرف المالك الافتراضي (Owner) تلقائياً عند أول تشغيل بناءً على هذه المتغيرات.*
 
 ### 4. التشغيل في بيئة التطوير
 لتشغيل الخادم المحلي مع التحديث التلقائي للكود (nodemon):

@@ -1,5 +1,5 @@
 // --- Configurations & Globals ---
-const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || 'http://localhost:3000/api';
+const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
 let cart = JSON.parse(localStorage.getItem('smile_cart') || '[]');
 let allProducts = [];
 let shippingZones = [];

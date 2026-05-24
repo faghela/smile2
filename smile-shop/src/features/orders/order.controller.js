@@ -11,11 +11,11 @@ const rollbackStock = async (deductedProducts) => {
     }
 };
 
+let transactionsSupported = true;
+
 const createOrder = async (req, res) => {
     const { items, customerName, customerPhone, customerAddress, city, notes } = req.body;
-    let totalPrice = 0;
     let shippingPrice = 0;
-    const deductedProducts = [];
 
     if (city && city.trim()) {
         try {
@@ -26,58 +26,122 @@ const createOrder = async (req, res) => {
         }
     }
 
-    try {
-        for (const item of items) {
-            const updatedProduct = await Product.findOneAndUpdate(
-                { _id: item.productId, stock: { $gte: item.quantity } },
-                { $inc: { stock: -item.quantity } },
-                { new: true }
-            );
+    // دالة داخلية تقوم بتنفيذ عملية الخصم وإنشاء الطلب بالكامل
+    // معامل useTx يحدد ما إذا كنا سنستخدم MongoDB Session & Transaction أم لا
+    const executeOrderCreation = async (useTx) => {
+        let session = null;
+        if (useTx) {
+            session = await mongoose.startSession();
+            session.startTransaction();
+        }
+        
+        const deductedProducts = [];
+        try {
+            let totalPrice = 0;
+            for (const item of items) {
+                // الخصم الذري الفردي للمخزون
+                const updatedProduct = await Product.findOneAndUpdate(
+                    { _id: item.productId, stock: { $gte: item.quantity } },
+                    { $inc: { stock: -item.quantity } },
+                    useTx ? { new: true, session } : { new: true }
+                );
 
-            if (!updatedProduct) {
-                await rollbackStock(deductedProducts);
-                const exists = await Product.exists({ _id: item.productId });
-                if (!exists) {
-                    return res.status(404).json({ message: `المنتج غير موجود` });
+                if (!updatedProduct) {
+                    if (useTx) {
+                        await session.abortTransaction();
+                        session.endSession();
+                    } else {
+                        await rollbackStock(deductedProducts);
+                    }
+                    const exists = await Product.exists({ _id: item.productId });
+                    if (!exists) {
+                        return { status: 404, message: 'المنتج غير موجود' };
+                    }
+                    return { status: 400, message: 'عذراً، الكمية المطلوبة من بعض المنتجات غير متوفرة حالياً' };
                 }
-                return res.status(400).json({ message: `عذراً، الكمية المطلوبة من بعض المنتجات غير متوفرة حالياً` });
+
+                totalPrice += updatedProduct.price * item.quantity;
+                deductedProducts.push({
+                    productId: item.productId,
+                    name: updatedProduct.name,
+                    price: updatedProduct.price,
+                    quantity: item.quantity,
+                    imageUrl: updatedProduct.imageUrl
+                });
             }
 
-            totalPrice += updatedProduct.price * item.quantity;
-            deductedProducts.push({
-                productId: item.productId,
-                name: updatedProduct.name,
-                price: updatedProduct.price,
-                quantity: item.quantity,
-                imageUrl: updatedProduct.imageUrl
+            // توليد رقم طلب عشوائي فريد من 6 أرقام
+            let orderNumber;
+            let attempts = 0;
+            const MAX_ATTEMPTS = 20;
+            do {
+                if (++attempts > MAX_ATTEMPTS) {
+                    throw new Error('فشل توليد رقم طلب فريد، يرجى المحاولة مرة أخرى');
+                }
+                orderNumber = Math.floor(100000 + Math.random() * 900000).toString();
+            } while (await Order.exists({ orderNumber }).session(useTx ? session : null));
+
+            const order = new Order({ 
+                orderNumber,
+                items: deductedProducts, 
+                customerName, customerPhone, customerAddress, city: city || '', 
+                shippingPrice,
+                notes, 
+                totalPrice: totalPrice + shippingPrice
             });
+            
+            await order.save(useTx ? { session } : undefined);
+            
+            if (useTx) {
+                await session.commitTransaction();
+                session.endSession();
+            }
+            return { success: true, order };
+        } catch (err) {
+            if (useTx) {
+                try { await session.abortTransaction(); } catch (e) {}
+                session.endSession();
+            } else {
+                await rollbackStock(deductedProducts);
+            }
+            throw err;
+        }
+    };
+
+    try {
+        let result;
+        if (transactionsSupported) {
+            try {
+                result = await executeOrderCreation(true);
+            } catch (err) {
+                const errMsg = err.message || '';
+                // [توثيق أمني وهيكلي]: 
+                // معاملات MongoDB (Transactions) تتطلب وجود Replica Set أو Sharded Cluster.
+                // في بيئات التطوير المحلية، غالباً ما يعمل المطورون بنسخة MongoDB منفردة (Standalone)
+                // والتي لا تدعم المعاملات وتطلق خطأ يحتوي على "Transaction numbers are only allowed on a replica set member" أو الرمز 20.
+                // لذا نقوم بالتقاط هذا الخطأ بالذات وتعيين transactionsSupported لـ false لعدم المحاولة مجدداً،
+                // والرجوع التلقائي (Fallback) للآلية السابقة (Loop-with-Rollback) لضمان عمل المتجر محلياً ولدى المطورين.
+                if (errMsg.includes('Transaction numbers are only allowed') || 
+                    errMsg.includes('replica set') || 
+                    err.codeName === 'IllegalOperation' ||
+                    (err.name === 'MongoServerError' && err.code === 20)) {
+                    console.warn('⚠️ [MongoDB Transactions Fallback]: Standalone MongoDB detected (no replica set support). Falling back to sequential atomic loops with manual rollbacks.');
+                    transactionsSupported = false;
+                    result = await executeOrderCreation(false);
+                } else {
+                    throw err;
+                }
+            }
+        } else {
+            result = await executeOrderCreation(false);
         }
 
-        // Generate a unique 6-digit order number safely
-        let orderNumber;
-        let attempts = 0;
-        const MAX_ATTEMPTS = 20;
-        do {
-            if (++attempts > MAX_ATTEMPTS) {
-                throw new Error('فشل توليد رقم طلب فريد، يرجى المحاولة مرة أخرى');
-            }
-            orderNumber = Math.floor(100000 + Math.random() * 900000).toString();
-        } while (await Order.exists({ orderNumber }));
-
-        const order = new Order({ 
-            orderNumber,
-            items: deductedProducts, 
-            customerName, customerPhone, customerAddress, city: city || '', 
-            shippingPrice,
-            notes, 
-            totalPrice: totalPrice + shippingPrice
-        });
-        await order.save();
-        
-        res.status(201).json({ success: true, order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });
-
+        if (result.success) {
+            return res.status(201).json({ success: true, order: result.order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });
+        } else {
+            return res.status(result.status).json({ message: result.message });
+        }
     } catch (err) {
-        await rollbackStock(deductedProducts);
         res.status(500).json({ message: err.message });
     }
 };
@@ -122,10 +186,11 @@ const exportOrders = async (req, res) => {
             let chunk = '';
             orders.forEach(o => {
                 const date = new Date(o.createdAt).toLocaleDateString('en-US');
-                const name    = `"${(o.customerName    || '').replace(/"/g, '""')}"`;
-                const phone   = `"${(o.customerPhone   || '').replace(/"/g, '""')}"`;
-                const address = `"${(o.customerAddress || '').replace(/"/g, '""')}"`;
-                const items   = `"${o.items.map(i => `${i.name} (${i.quantity})`).join(' - ')}"`;
+                const name    = `"${(o.customerName    || '').replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
+                const phone   = `"${(o.customerPhone   || '').replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
+                const address = `"${(o.customerAddress || '').replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
+                const itemsStr = o.items.map(i => `${i.name} (${i.quantity})`).join(' - ');
+                const items    = `"${itemsStr.replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
                 chunk += `"${o.orderNumber || o._id}",${name},${phone},${address},${o.totalPrice},${o.status},${date},${items}\n`;
             });
             

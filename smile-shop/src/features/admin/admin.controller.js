@@ -12,20 +12,32 @@ const seedDefaultAdmin = async () => {
     try {
         const count = await Admin.countDocuments();
         if (count === 0) {
-            const username = ADMIN_USERNAME || 'admin';
-            const password = ADMIN_PASSWORD || 'admin123';
+            const username = ADMIN_USERNAME;
+            const password = ADMIN_PASSWORD;
+            
+            if (process.env.NODE_ENV === 'production') {
+                if (!username || !password || password === 'admin123' || username === 'admin') {
+                    console.error('🚨 [SECURITY WARNING]: Seeding default admin refused in production mode with missing/weak/default credentials.');
+                    console.error('🚨 Please set strong ADMIN_USERNAME and ADMIN_PASSWORD environment variables.');
+                    return;
+                }
+            }
+            
+            const finalUsername = username || 'admin';
+            const finalPassword = password || 'admin123';
+            
             let hashedPassword;
-            if (password.startsWith('$2')) {
-                hashedPassword = password;
+            if (finalPassword.startsWith('$2')) {
+                hashedPassword = finalPassword;
             } else {
-                hashedPassword = await bcrypt.hash(password, 10);
+                hashedPassword = await bcrypt.hash(finalPassword, 10);
             }
             await Admin.create({
-                username,
+                username: finalUsername,
                 password: hashedPassword,
                 role: 'owner'
             });
-            console.log('✅ Default owner admin seeded successfully');
+            console.log(`✅ Default owner admin seeded successfully (${finalUsername})`);
         }
     } catch (err) {
         console.error('❌ Failed to seed default admin:', err.message);

@@ -94,3 +94,178 @@ select.status-sel{background:var(--bg3);border:1px solid var(--border);color:var
 @keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 .no-data{text-align:center;padding:3rem;color:var(--txt2);font-size:.9rem}
+
+/* Custom Premium Status Dropdown */
+.status-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.status-badge-btn {
+  padding: .35rem .8rem;
+  border-radius: 50px;
+  font-size: .78rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.status-badge-btn:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+.status-badge-btn.pending { background: rgba(245,158,11,.15); color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+.status-badge-btn.processing { background: rgba(59,130,246,.15); color: var(--blue); border: 1px solid rgba(59,130,246,.3); }
+.status-badge-btn.shipped { background: rgba(124,58,237,.15); color: var(--purple); border: 1px solid rgba(124,58,237,.3); }
+.status-badge-btn.delivered { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.status-badge-btn.cancelled { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+
+.status-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 140px;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+.status-dropdown-menu.open {
+  display: block;
+  animation: dropdownFade .2s ease;
+}
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.status-dropdown-item {
+  padding: .6rem 1rem;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: right;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.status-dropdown-item:last-child {
+  border-bottom: none;
+}
+.status-dropdown-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+.status-dropdown-item.pending { color: var(--yellow); }
+.status-dropdown-item.processing { color: var(--blue); }
+.status-dropdown-item.shipped { color: var(--purple); }
+.status-dropdown-item.delivered { color: var(--green); }
+.status-dropdown-item.cancelled { color: var(--red); }
+.status-dropdown-item.active {
+  background: rgba(255,255,255,0.03);
+  font-weight: 800;
+}
+
+/* Bulk Action Bar style */
+.bulk-actions-bar {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(15, 15, 30, 0.85);
+  border: 1px solid var(--border);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(124, 58, 237, 0.2);
+  border-radius: 20px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 600;
+  backdrop-filter: blur(15px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  pointer-events: none;
+}
+.bulk-actions-bar.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bulk-info {
+  font-size: 0.9rem;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bulk-info b {
+  color: var(--purple);
+  font-size: 1.1rem;
+}
+.bulk-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.bulk-btns > span {
+  font-size: 0.85rem;
+  color: var(--txt2);
+}
+.bulk-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--txt);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.bulk-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.bulk-btn.pending:hover { border-color: var(--yellow); color: var(--yellow); }
+.bulk-btn.processing:hover { border-color: var(--blue); color: var(--blue); }
+.bulk-btn.shipped:hover { border-color: var(--purple); color: var(--purple); }
+.bulk-btn.delivered:hover { border-color: var(--green); color: var(--green); }
+.bulk-btn.cancelled:hover { border-color: var(--red); color: var(--red); }
+.bulk-btn.delete-selected {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--red);
+}
+.bulk-btn.delete-selected:hover {
+  background: var(--red);
+  color: white;
+}
+.bulk-close {
+  background: none;
+  border: none;
+  color: var(--txt2);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.bulk-close:hover {
+  color: var(--txt);
+}
+
+/* Custom styled inputs for checkboxes in dark theme */
+input[type="checkbox"] {
+  accent-color: var(--purple);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.tbl-wrap td select.status-sel {
+  display: none; /* Hide native status select completely */
+}

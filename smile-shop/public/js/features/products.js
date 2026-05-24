@@ -75,8 +75,9 @@ async function fetchProducts(append = false) {
     allProducts = [...allProducts, ...products];
     renderProducts(products, append);
     if (!append) fetchCategories();
-    try { populateCrossSell(); } catch(e) {}
+    try { populateCrossSell(); } catch(e) { console.error('populateCrossSell failed:', e); }
   } catch(e) {
+    console.error('fetchProducts failed:', e);
     document.getElementById('productsGrid').innerHTML = '<div class="empty"><i class="fa fa-exclamation-circle"></i><p>حدث خطأ في جلب المنتجات</p></div>';
   }
 }
@@ -246,7 +247,9 @@ async function fetchCategories() {
     const getLabel = (c) => `${iconMap[c] || '🏷️'} ${c}`;
     bar.innerHTML = `<button class="cat-btn ${'الكل' === currentCat ? 'active' : ''}" onclick="filterCat('الكل',this)">${getLabel('الكل')}</button>` +
       uniqueCats.map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="filterCat('${c}',this)">${getLabel(c)}</button>`).join('');
-  } catch(e) {}
+  } catch(e) {
+    console.error('fetchCategories failed:', e);
+  }
 }
 
 function filterCat(cat, el) {
