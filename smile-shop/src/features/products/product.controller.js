@@ -5,8 +5,10 @@ const Product = require('./product.model');
 // Helper: حذف ملف الصورة المرفوعة محلياً إن وُجد
 function deleteLocalImage(imageUrl) {
     if (!imageUrl || imageUrl.startsWith('http')) return; // رابط خارجي، تجاهل
+    // إزالة علامة / البادئة من رابط الصورة لتفادي اعتبارها مساراً مطلقاً عند دمج المسارات
+    const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
     // Note: __dirname is src/features/products. Go up to smile-shop/public
-    const filePath = path.join(__dirname, '../../../public', imageUrl);
+    const filePath = path.join(__dirname, '../../../public', cleanPath);
     fs.unlink(filePath, (err) => {
         if (err && err.code !== 'ENOENT') {
             console.error('[WARN] Failed to delete image file:', filePath, err.message);

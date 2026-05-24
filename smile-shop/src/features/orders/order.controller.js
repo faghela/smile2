@@ -123,6 +123,7 @@ const createOrder = async (req, res) => {
                 // والرجوع التلقائي (Fallback) للآلية السابقة (Loop-with-Rollback) لضمان عمل المتجر محلياً ولدى المطورين.
                 if (errMsg.includes('Transaction numbers are only allowed') || 
                     errMsg.includes('replica set') || 
+                    errMsg.includes('retryable writes') || 
                     err.codeName === 'IllegalOperation' ||
                     (err.name === 'MongoServerError' && err.code === 20)) {
                     console.warn('⚠️ [MongoDB Transactions Fallback]: Standalone MongoDB detected (no replica set support). Falling back to sequential atomic loops with manual rollbacks.');

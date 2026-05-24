@@ -7,6 +7,7 @@ const Admin = require('./admin.model');
 const JWT_SECRET      = process.env.JWT_SECRET;
 const ADMIN_USERNAME  = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD;
+const usernameRegex   = /^[a-zA-Z0-9_]{3,20}$/;
 
 const seedDefaultAdmin = async () => {
     try {
@@ -77,8 +78,11 @@ const getAdmins = async (req, res) => {
 const createAdmin = async (req, res) => {
     try {
         const { username, password, role } = req.body;
-        if (!username || username.trim().length < 3) {
-            return res.status(400).json({ message: 'اسم المستخدم يجب أن يكون 3 حروف على الأقل' });
+        if (!username) {
+            return res.status(400).json({ message: 'اسم المستخدم مطلوب' });
+        }
+        if (!usernameRegex.test(username.trim())) {
+            return res.status(400).json({ message: 'اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام وعلامة _ فقط، وبين 3 إلى 20 رمزاً.' });
         }
         if (!password || password.trim().length < 6) {
             return res.status(400).json({ message: 'كلمة المرور يجب أن تكون 6 رموز على الأقل' });
@@ -116,12 +120,18 @@ const updateAdmin = async (req, res) => {
             }
         }
 
-        if (username && username.trim() !== admin.username) {
-            const existing = await Admin.findOne({ username: username.trim() });
-            if (existing) {
-                return res.status(400).json({ message: 'اسم المستخدم هذا مستخدم بالفعل' });
+        if (username !== undefined) {
+            const trimmedUsername = username.trim();
+            if (!usernameRegex.test(trimmedUsername)) {
+                return res.status(400).json({ message: 'اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام وعلامة _ فقط، وبين 3 إلى 20 رمزاً.' });
             }
-            admin.username = username.trim();
+            if (trimmedUsername !== admin.username) {
+                const existing = await Admin.findOne({ username: trimmedUsername });
+                if (existing) {
+                    return res.status(400).json({ message: 'اسم المستخدم هذا مستخدم بالفعل' });
+                }
+                admin.username = trimmedUsername;
+            }
         }
 
         if (password && password.trim().length >= 6) {

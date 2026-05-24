@@ -13,8 +13,16 @@ const orderLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const trackLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 دقيقة
+    max: 20, // 20 محاولة كحد أقصى لكل IP
+    message: { message: 'محاولات تتبع كثيرة جداً، يرجى المحاولة بعد 15 دقيقة.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 router.post('/', orderLimiter, validateOrder, orderController.createOrder);
-router.get('/track', orderController.trackOrders);
+router.get('/track', trackLimiter, orderController.trackOrders);
 
 const { ownerOnly } = adminAuth;
 
