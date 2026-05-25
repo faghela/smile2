@@ -17,6 +17,11 @@ const shippingRoutes = require('./src/features/shipping/shipping.routes');
 const { getSitemap } = require('./src/features/seo/sitemap.controller');
 
 const app  = express();
+
+// تمكين ثقة البروكسي (Render/Reverse Proxy) لقراءة الـ IP الحقيقي للمستخدمين بشكل صحيح
+// هذا يمنع حظر جميع المستخدمين عند تفعيل محدد الطلبات (Rate Limiter)
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 // ─── Security & Logging Middleware ────────────────────────────────────────────
