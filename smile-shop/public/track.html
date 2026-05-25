@@ -4,11 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>تتبع طلبك - Smile Shop</title>
-<meta name="description" content="تتبع حالة طلبك في متجر Smile Shop برقم هاتفك">
+<meta name="description" content="تتبع حالة طلبك في متجر Smile Shop برقم هاتفك. أدخل تفاصيل الطلب لمعرفة أين هي شحنتك وموعد وصولها.">
+<meta name="keywords" content="تتبع الطلب, Smile Shop, حالة الشحنة, توصيل ليبيا, طلبات">
+<meta name="author" content="Smile Shop">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://smileshop.ly/track.html">
+<meta property="og:title" content="تتبع طلبك - Smile Shop">
+<meta property="og:description" content="تتبع حالة شحنتك وطلبك من متجر Smile Shop مباشرة برقم هاتفك ورقم الطلب.">
+<meta property="og:image" content="/icons/icon-512x512.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="/config.js"></script>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="manifest" href="/manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered.'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    });
+  }
+</script>
 </head>
 <body>
 
@@ -52,6 +70,7 @@
   <div id="resultsContent"></div>
 </div>
 
+<script src="/js/features/globals.js"></script>
 <script src="/js/features/track.js"></script>
 <script src="/js/features/ui.js"></script>
 <!-- Toast Container -->

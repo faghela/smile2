@@ -12,15 +12,7 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
     storage: storage,
@@ -37,7 +29,9 @@ const upload = multer({
     }
 });
 
-router.post('/', adminAuth, upload.single('image'), uploadController.uploadImage);
+const { processImage } = require('../../core/middleware/imageProcessor');
+
+router.post('/', adminAuth, upload.single('image'), processImage, uploadController.uploadImage);
 
 router.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {

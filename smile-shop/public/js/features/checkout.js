@@ -343,8 +343,14 @@ async function submitOrder() {
     cart = []; saveCart();
     closeCheckout();
     
-    // Show success screen with order ID/Number and phone
-    showSuccessScreen(data.order?.orderNumber || data.order?._id || '', phone);
+    // Show success screen with order ID/Number and phone details
+    showSuccessScreen(
+      data.order?.orderNumber || data.order?._id || '', 
+      phone, 
+      name, 
+      data.order?.totalPrice || 0, 
+      city
+    );
     
     // Reset forms
     ['custName','custPhone','custAddress','custNotes'].forEach(id => document.getElementById(id).value = '');
@@ -359,12 +365,20 @@ async function submitOrder() {
 }
 
 // --- Order Success Screen ---
-function showSuccessScreen(orderId, phone) {
+function showSuccessScreen(orderId, phone, name, total, city) {
   document.getElementById('successOrderId').textContent = orderId || '—';
   const trackBtn = document.querySelector('.success-actions .btn-track');
   if (trackBtn && orderId && phone) {
     trackBtn.href = `/track.html?phone=${encodeURIComponent(phone)}&orderId=${encodeURIComponent(orderId)}`;
   }
+  
+  const waBtn = document.getElementById('whatsappConfirmBtn');
+  if (waBtn && orderId) {
+    const ownerWa = (window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218910000000';
+    const messageText = `مرحباً متجر Smile Shop، أود تأكيد طلبي رقم *${orderId}*.\nالاسم: *${name || '—'}*\nالهاتف: *${phone || '—'}*\nالمدينة: *${city || '—'}*\nالإجمالي الكلي: *${(total || 0).toLocaleString('en-US')} د*`;
+    waBtn.href = generateWhatsAppLink(ownerWa, messageText);
+  }
+  
   document.getElementById('successOverlay').classList.add('open');
   launchConfetti();
 }

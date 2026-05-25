@@ -7,12 +7,14 @@ const path         = require('path');
 const helmet       = require('helmet');
 const morgan       = require('morgan');
 const rateLimit    = require('express-rate-limit');
+const compression  = require('compression');
 
 const productRoutes  = require('./src/features/products/product.routes');
 const orderRoutes    = require('./src/features/orders/order.routes');
 const adminRoutes    = require('./src/features/admin/admin.routes');
 const uploadRoutes   = require('./src/features/upload/upload.routes');
 const shippingRoutes = require('./src/features/shipping/shipping.routes');
+const { getSitemap } = require('./src/features/seo/sitemap.controller');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -63,9 +65,25 @@ if (process.env.NODE_ENV === 'production') {
     app.use(morgan('dev'));
 }
 
+app.use(compression());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// إعدادات التخزين المؤقت للأصول والملفات الثابتة لتحسين الأداء وسرعة التحميل
+const staticCacheOptions = {
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            // عدم تخزين ملفات HTML لضمان حصول المستخدم على التحديثات فوراً
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (filePath.match(/\.(jpg|jpeg|png|gif|webp|svg|css|js|woff2?|json)$/)) {
+            // تخزين الأصول الأخرى لمدة سنة كاملة
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+    }
+};
+
+app.use(express.static(path.join(__dirname, 'public'), staticCacheOptions));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), staticCacheOptions));
 
 // ─── Rate Limiting (حماية من DDoS و Spam) ───────────────────────────────────
 const globalLimiter = rateLimit({
@@ -92,6 +110,8 @@ mongoose.connect(mongoURI)
     .catch(err => console.error('❌ خطأ في الاتصال:', err.message));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.get('/sitemap.xml', getSitemap);
+
 app.use('/api/products',  productRoutes);
 app.use('/api/orders',    orderRoutes);
 app.use('/api/admin',     adminRoutes);

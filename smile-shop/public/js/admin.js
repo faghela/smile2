@@ -292,7 +292,14 @@ async function loadOrders(){
       <tr>
         <td style="text-align: center;"><input type="checkbox" class="order-chk" data-id="${o._id}" onchange="onOrderSelectChange()"></td>
         <td style="font-weight:600">${o.customerName}</td>
-        <td style="color:var(--txt2)">${o.customerPhone}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:0.4rem; justify-content:center;">
+            <span style="color:var(--txt2)">${o.customerPhone}</span>
+            <a href="${getAdminWhatsAppLink(o.customerPhone, `مرحباً ${o.customerName}، نحن متجر Smile Shop بخصوص طلبك رقم (${o.orderNumber || o._id})...`)}" target="_blank" class="admin-wa-btn" title="مراسلة العميل عبر واتساب" style="color:#10b981; font-size:1.1rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+              <i class="fab fa-whatsapp"></i>
+            </a>
+          </div>
+        </td>
         <td><span class="badge processing">${o.city || '—'}</span></td>
         <td><button class="act-btn edit" onclick="openOrderModal('${o._id}')"><i class="fa fa-eye"></i> تفاصيل</button></td>
         <td style="color:#9f67ff;font-weight:700">${o.totalPrice.toLocaleString('en-US')} د</td>
@@ -331,7 +338,34 @@ async function updateStatus(id, status){
   try {
     const res = await fetch(`${API}/orders/${id}/status`,{method:'PUT',headers:authH(),body:JSON.stringify({status})});
     if(!res.ok) throw new Error((await res.json()).message);
-    toast('تم تحديث الحالة','s'); loadStats();
+    toast('تم تحديث الحالة بنجاح','s');
+    
+    loadOrders();
+    loadStats();
+
+    const order = loadedOrders.find(o => o._id === id);
+    if (order) {
+      const arStatus = statLabels[status];
+      let msg = '';
+      if (status === 'processing') {
+        msg = `مرحباً ${order.customerName}، تم تأكيد طلبك رقم (${order.orderNumber || order._id}) وهو قيد التجهيز الآن في متجر Smile Shop. شكراً لتسوقك معنا!`;
+      } else if (status === 'shipped') {
+        msg = `مرحباً ${order.customerName}، يسعدنا إعلامك بأن طلبك رقم (${order.orderNumber || order._id}) قد تم شحنه وهو في الطريق إليك مع مندوب التوصيل. يرجى إبقاء هاتفك قريباً!`;
+      } else if (status === 'delivered') {
+        msg = `مرحباً ${order.customerName}، تم تسليم طلبك رقم (${order.orderNumber || order._id}) بنجاح. نتمنى أن تنال المنتجات رضاك، وتسعدنا مشاركتك لتجربتك معنا!`;
+      } else if (status === 'cancelled') {
+        msg = `مرحباً ${order.customerName}، نأسف لإعلامك بأنه تم إلغاء طلبك رقم (${order.orderNumber || order._id}). نأمل أن نخدمك في فرصة أخرى.`;
+      }
+      
+      if (msg) {
+        setTimeout(() => {
+          if (confirm(`هل ترغب في مراسلة العميل عبر واتساب لتحديثه بالحالة الجديدة (${arStatus})؟`)) {
+            const link = getAdminWhatsAppLink(order.customerPhone, msg);
+            window.open(link, '_blank');
+          }
+        }, 300);
+      }
+    }
   } catch(e){
     console.error('updateStatus failed:', e);
     toast(e.message,'e');
@@ -356,7 +390,11 @@ function openOrderModal(oOrId){
     <div style="margin-bottom:1rem; font-size: 0.95rem;">
       <p><strong>رقم الطلب:</strong> ${o.orderNumber || o._id}</p>
       <p><strong>العميل:</strong> ${o.customerName}</p>
-      <p><strong>الهاتف:</strong> ${o.customerPhone}</p>
+      <p><strong>الهاتف:</strong> ${o.customerPhone} 
+        <a href="${getAdminWhatsAppLink(o.customerPhone, `مرحباً ${o.customerName}، نحن متجر Smile Shop بخصوص طلبك رقم (${o.orderNumber || o._id})...`)}" target="_blank" style="color:#10b981; margin-right:0.6rem; font-size:1.15rem;" title="مراسلة عبر واتساب">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </p>
       <p><strong>المدينة:</strong> ${o.city || '—'}</p>
       <p><strong>العنوان:</strong> ${o.customerAddress}</p>
       <p><strong>التوصيل:</strong> ${(o.shippingPrice || 0) === 0 ? 'مجاني' : (o.shippingPrice).toLocaleString('en-US') + ' د'}</p>
@@ -721,4 +759,19 @@ async function bulkDeleteOrders() {
     console.error(e);
     toast(e.message || 'حدث خطأ أثناء الحذف الجماعي', 'e');
   }
+}
+
+// دالة توليد روابط الواتساب للوحة التحكم المشرف
+function getAdminWhatsAppLink(phone, message) {
+  if (!phone) return '#';
+  let cleanPhone = phone.replace(/\D/g, '');
+  if (cleanPhone.startsWith('09')) {
+    cleanPhone = '218' + cleanPhone.slice(1);
+  } else if (cleanPhone.startsWith('9') && cleanPhone.length === 9) {
+    cleanPhone = '218' + cleanPhone;
+  }
+  if (!cleanPhone.startsWith('218') && cleanPhone.length === 9) {
+    cleanPhone = '218' + cleanPhone;
+  }
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }

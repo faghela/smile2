@@ -82,6 +82,11 @@ function renderOrder(o, index) {
         </div>
         ${o.notes ? `<p style="margin-top:.8rem;font-size:.85rem;color:var(--txt2)"><strong>ملاحظات:</strong> ${o.notes}</p>` : ''}
         ${o.customerAddress ? `<p style="margin-top:.4rem;font-size:.85rem;color:var(--txt2)"><strong>العنوان:</strong> ${o.customerAddress}</p>` : ''}
+        <div style="display:flex; justify-content:center; margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+          <a href="${generateWhatsAppLink((window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218910000000', `مرحباً متجر Smile Shop، أود الاستفسار عن حالة طلبي رقم *${displayId}* (الحالة الحالية للطلب: *${sl.ar}*)`)}" target="_blank" class="btn-whatsapp-track">
+             <i class="fab fa-whatsapp" style="margin-left:0.5rem"></i> استفسار عن الطلب عبر واتساب
+          </a>
+        </div>
       </div>
     </div>`;
 }

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>انقطع الاتصال - Smile Shop</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg: #05050a;
+    --card: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.06);
+    --purple: #8b5cf6;
+    --purple-l: #a78bfa;
+    --txt: #f8fafc;
+    --txt2: #94a3b8;
+    --grad: linear-gradient(135deg, #8b5cf6, #ec4899);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.03) 0%, transparent 40%);
+    color: var(--txt);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow: hidden;
+  }
+  .offline-card {
+    background: rgba(10, 10, 20, 0.7);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 3rem 2rem;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 30px rgba(139, 92, 246, 0.05);
+    position: relative;
+  }
+  .icon-ring {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.08);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.2rem;
+    color: var(--purple-l);
+    animation: pulse 2s infinite alternate;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.1); }
+    100% { transform: scale(1.05); box-shadow: 0 0 25px rgba(139, 92, 246, 0.25); }
+  }
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  p {
+    font-size: 0.95rem;
+    color: var(--txt2);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+  .btn-retry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 1rem;
+    background: var(--grad);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+  }
+  .btn-retry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(139, 92, 246, 0.5);
+  }
+  .btn-retry:active {
+    transform: translateY(0);
+  }
+  .hint {
+    margin-top: 1.2rem;
+    font-size: 0.8rem;
+    color: var(--txt2);
+  }
+</style>
+</head>
+<body>
+
+<div class="offline-card">
+  <div class="icon-ring">
+    <i class="fa fa-wifi"></i>
+  </div>
+  <h1>انقطع الاتصال بالشبكة!</h1>
+  <p>يبدو أنك لست متصلاً بالإنترنت حالياً. يرجى التحقق من اتصال الواي فاي أو بيانات الهاتف والمحاولة مرة أخرى.</p>
+  <button class="btn-retry" onclick="window.location.reload()">
+    <i class="fa fa-sync-alt"></i> إعادة المحاولة
+  </button>
+  <div class="hint">
+    <i class="fa fa-info-circle"></i> يمكنك تصفح المنتجات المحملة مسبقاً عند استقرار الشبكة.
+  </div>
+</div>
+
+</body>
+</html>

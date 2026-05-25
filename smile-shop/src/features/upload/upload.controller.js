@@ -1,11 +1,11 @@
 const uploadImage = (req, res) => {
     try {
-        if (!req.file) {
+        if (!req.processedFile) {
             return res.status(400).json({ message: 'الرجاء اختيار صورة لرفعها' });
         }
         
-        const imageUrl = `/uploads/${req.file.filename}`;
-        res.status(201).json({ success: true, imageUrl, message: 'تم رفع الصورة بنجاح' });
+        const imageUrl = `/uploads/${req.processedFile.filename}`;
+        res.status(201).json({ success: true, imageUrl, message: 'تم رفع الصورة بنجاح ومعالجتها' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

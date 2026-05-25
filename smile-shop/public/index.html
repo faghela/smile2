@@ -4,11 +4,54 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smile Shop | تسوق بسعادة ✨</title>
-<meta name="description" content="متجر Smile Shop - تجربة تسوق استثنائية">
+<meta name="description" content="متجر Smile Shop - وجهتك المثالية للتسوق في ليبيا. اكتشف عروضنا الحصرية وتوصيلنا السريع والآمن.">
+<meta name="keywords" content="متجر Smile Shop, تسوق الكتروني, عطور, ساعات, ملابس, توصيل طرابلس, ليبيا, شراء اونلاين">
+<meta name="author" content="Smile Shop">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://smileshop.ly/">
+<meta property="og:title" content="Smile Shop | تسوق بسعادة ✨">
+<meta property="og:description" content="وجهتك المثالية للتسوق في ليبيا. عروض حصرية، عطور وساعات وملابس مميزة مع توصيل سريع وآمن لجميع المدن.">
+<meta property="og:image" content="/icons/icon-512x512.png">
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://smileshop.ly/">
+<meta property="twitter:title" content="Smile Shop | تسوق بسعادة ✨">
+<meta property="twitter:description" content="وجهتك المثالية للتسوق في ليبيا. عروض حصرية وتوصيل سريع وآمن لجميع المدن.">
+<meta property="twitter:image" content="/icons/icon-512x512.png">
+<!-- JSON-LD Local Business Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Store",
+  "name": "Smile Shop",
+  "image": "/icons/icon-512x512.png",
+  "@id": "https://smileshop.ly/#store",
+  "url": "https://smileshop.ly/",
+  "telephone": "+218910000000",
+  "priceRange": "LYD",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "طرابلس",
+    "addressLocality": "Tripoli",
+    "addressCountry": "LY"
+  }
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="/config.js"></script>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="manifest" href="/manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered.'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    });
+  }
+</script>
 </head>
 <body>
 
@@ -433,6 +476,11 @@
       </div>
     </div>
     <p class="success-hint"><i class="fa fa-info-circle"></i> احتفظ برقم طلبك لتتبعه لاحقاً</p>
+    <div class="success-whatsapp-confirm" style="margin: 1.2rem 0;">
+      <a href="#" id="whatsappConfirmBtn" target="_blank" class="btn-whatsapp-confirm">
+        <i class="fab fa-whatsapp" style="margin-left: 0.5rem;"></i> تأكيد الطلب عبر واتساب
+      </a>
+    </div>
     <div class="success-actions">
       <a href="/track.html" class="btn-track">
         <i class="fa fa-map-marker-alt"></i> تتبع طلبك
