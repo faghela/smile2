@@ -41,6 +41,53 @@ const sendWhatsAppNotification = async (order) => {
     }
 };
 
+// دالة إرسال إشعار تليجرام تلقائي للأدمن عند استلام طلب جديد
+const sendTelegramNotification = async (order) => {
+    try {
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        const chatId = process.env.TELEGRAM_CHAT_ID;
+        
+        if (!token || !chatId) {
+            console.log('ℹ️ [Telegram Notification]: تم تخطي إرسال إشعار تليجرام لعدم توفر TELEGRAM_BOT_TOKEN أو TELEGRAM_CHAT_ID');
+            return;
+        }
+        
+        const itemsList = order.items.map(item => `• <b>${item.name}</b> (${item.quantity})`).join('\n');
+        
+        const text = `🛍️ <b>طلب جديد في متجر Smile Shop!</b>\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `📦 <b>رقم الطلب:</b> #${order.orderNumber || order._id}\n` +
+                     `👤 <b>العميل:</b> ${order.customerName}\n` +
+                     `📞 <b>الهاتف:</b> ${order.customerPhone}\n` +
+                     `📍 <b>العنوان:</b> ${order.city} - ${order.customerAddress}\n` +
+                     `💰 <b>إجمالي السعر:</b> ${order.totalPrice} د.ل\n\n` +
+                     `📋 <b>المنتجات المطلوبة:</b>\n${itemsList}\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `<i>يرجى مراجعة لوحة التحكم لتأكيد الطلب.</i>`;
+        
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+        
+        if (!response.ok) {
+            const respText = await response.text();
+            console.error(`[Telegram Error]: Status ${response.status} - ${respText}`);
+        } else {
+            console.log(`[Telegram Notification]: Sent successfully to admin for order #${order.orderNumber}`);
+        }
+    } catch (err) {
+        console.error('[Telegram Notification Error]:', err.message);
+    }
+};
+
 const rollbackStock = async (deductedProducts) => {
     for (const item of deductedProducts) {
         await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
@@ -176,9 +223,12 @@ const createOrder = async (req, res) => {
         }
 
         if (result.success) {
-            // إرسال إشعار واتساب تلقائي للأدمن بالخلفية دون تأخير الاستجابة للمستخدم
-            sendWhatsAppNotification(result.order).catch(err => {
-                console.error('[WhatsApp Notification Background Error]:', err.message);
+            // إرسال إشعارات تلقائية للأدمن بالخلفية دون تأخير الاستجابة للمستخدم
+            Promise.all([
+                sendWhatsAppNotification(result.order),
+                sendTelegramNotification(result.order)
+            ]).catch(err => {
+                console.error('[Notifications Background Error]:', err.message);
             });
             return res.status(201).json({ success: true, order: result.order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });
         } else {
