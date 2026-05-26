@@ -374,9 +374,9 @@ function showSuccessScreen(orderId, phone, name, total, city) {
   
   const waBtn = document.getElementById('whatsappConfirmBtn');
   if (waBtn && orderId) {
-    const ownerWa = (window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218910000000';
-    const messageText = `مرحباً متجر Smile Shop، أود تأكيد طلبي رقم *${orderId}*.\nالاسم: *${name || '—'}*\nالهاتف: *${phone || '—'}*\nالمدينة: *${city || '—'}*\nالإجمالي الكلي: *${(total || 0).toLocaleString('en-US')} د*`;
-    waBtn.href = generateWhatsAppLink(ownerWa, messageText);
+    const supportWa = '218944449445';
+    const messageText = `مرحباً متجر Smile Shop، لدي استفسار أو واجهتني مشكلة في طلبي رقم *${orderId}*.`;
+    waBtn.href = generateWhatsAppLink(supportWa, messageText);
   }
   
   document.getElementById('successOverlay').classList.add('open');

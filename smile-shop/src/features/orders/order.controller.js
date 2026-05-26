@@ -3,6 +3,44 @@ const Order = require('./order.model');
 const Product = require('../products/product.model');
 const ShippingZone = require('../shipping/shippingZone.model');
 
+// دالة إرسال إشعار واتساب تلقائي للأدمن عند استلام طلب جديد (باستخدام CallMeBot)
+const sendWhatsAppNotification = async (order) => {
+    try {
+        const apikey = process.env.CALLMEBOT_API_KEY;
+        const phone = process.env.WHATSAPP_NUMBER || '218910000000';
+        
+        if (!apikey) {
+            console.log('ℹ️ [WhatsApp Notification]: تم تخطي إرسال إشعار واتساب لعدم توفر مفتاح البيئة CALLMEBOT_API_KEY');
+            return;
+        }
+        
+        const itemsList = order.items.map(item => `- ${item.name} (${item.quantity})`).join('\n');
+        
+        const text = `🛍️ *طلب جديد في متجر Smile Shop!*\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `📦 *رقم الطلب:* #${order.orderNumber || order._id}\n` +
+                     `👤 *العميل:* ${order.customerName}\n` +
+                     `📞 *الهاتف:* ${order.customerPhone}\n` +
+                     `📍 *العنوان:* ${order.city} - ${order.customerAddress}\n` +
+                     `💰 *إجمالي السعر:* ${order.totalPrice} د.ل\n\n` +
+                     `📋 *المنتجات المطلوبة:* \n${itemsList}\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `يرجى مراجعة لوحة التحكم لتأكيد الطلب.`;
+        
+        const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            const respText = await response.text();
+            console.error(`[CallMeBot Error]: Status ${response.status} - ${respText}`);
+        } else {
+            console.log(`[WhatsApp Notification]: Sent successfully to admin for order #${order.orderNumber}`);
+        }
+    } catch (err) {
+        console.error('[WhatsApp Notification Error]:', err.message);
+    }
+};
+
 const rollbackStock = async (deductedProducts) => {
     for (const item of deductedProducts) {
         await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
@@ -138,6 +176,10 @@ const createOrder = async (req, res) => {
         }
 
         if (result.success) {
+            // إرسال إشعار واتساب تلقائي للأدمن بالخلفية دون تأخير الاستجابة للمستخدم
+            sendWhatsAppNotification(result.order).catch(err => {
+                console.error('[WhatsApp Notification Background Error]:', err.message);
+            });
             return res.status(201).json({ success: true, order: result.order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });
         } else {
             return res.status(result.status).json({ message: result.message });
