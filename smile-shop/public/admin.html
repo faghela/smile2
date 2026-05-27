@@ -49,10 +49,23 @@
         <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,.15);color:var(--green)"><i class="fa fa-shopping-bag"></i></div><div class="stat-info"><p>الطلبات</p><h3 id="s-orders">-</h3></div></div>
         <div class="stat-card"><div class="stat-icon" style="background:rgba(217,70,239,.15);color:var(--pink)"><i class="fa fa-coins"></i></div><div class="stat-info"><p>الإيرادات</p><h3 id="s-revenue">-</h3></div></div>
         <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.15);color:var(--yellow)"><i class="fa fa-clock"></i></div><div class="stat-info"><p>طلبات معلقة</p><h3 id="s-pending">-</h3></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(239,68,68,.15);color:var(--red)"><i class="fa fa-ban"></i></div><div class="stat-info"><p>نسبة الإلغاء</p><h3 id="s-cancellation">-</h3></div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem">
         <div class="chart-card"><h3>الإيرادات - آخر 7 أيام</h3><canvas id="revenueChart" height="120"></canvas></div>
         <div class="chart-card"><h3>الإيرادات الشهرية - آخر 6 أشهر</h3><canvas id="monthlyChart" height="120"></canvas></div>
+      </div>
+      
+      <!-- Advanced Stats Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.2rem">
+        <div class="chart-card">
+          <h3>⏳ أوقات الذروة (أوقات الشراء الأكثر نشاطاً)</h3>
+          <canvas id="peakHoursChart" height="120"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>🗺️ المدن الأكثر طلباً</h3>
+          <div id="topCitiesList" style="margin-top:.8rem"></div>
+        </div>
       </div>
       <div class="chart-card">
         <h3>⭐ أكثر المنتجات مبيعاً</h3>
@@ -161,6 +174,8 @@
     <div class="fgrp"><label class="lbl">الوصف *</label><textarea class="inp" id="pDesc" rows="2" placeholder="وصف المنتج"></textarea></div>
     <div class="fgrp"><label class="lbl">الفئة</label><input class="inp" id="pCat" placeholder="مثال: إلكترونيات، ملابس..."></div>
     <div class="fgrp"><label class="lbl">السعر (دينار) *</label><input class="inp" type="number" id="pPrice" placeholder="0"></div>
+    <div class="fgrp"><label class="lbl">السعر المخفض (دينار - اختياري)</label><input class="inp" type="number" id="pSalePrice" placeholder="ضع سعراً مخفضاً إن وجد" min="0"></div>
+    <div class="fgrp"><label class="lbl">تاريخ نهاية العرض (اختياري)</label><input class="inp" type="datetime-local" id="pDiscountEndsAt"></div>
     <div class="fgrp"><label class="lbl">المخزون</label><input class="inp" type="number" id="pStock" placeholder="0"></div>
     
     <div class="fgrp">

@@ -81,6 +81,12 @@
         <span>تتبع الطلب</span>
       </a>
       <div class="mag-btn-wrap" onmousemove="magnetEffect(event, this)" onmouseleave="resetMagnet(this)">
+        <button class="wishlist-btn" onclick="openWishlist()" title="قائمة المفضلة">
+          <i class="fa-regular fa-heart"></i>
+          <span class="wishlist-badge" id="wishlistBadge">0</span>
+        </button>
+      </div>
+      <div class="mag-btn-wrap" onmousemove="magnetEffect(event, this)" onmouseleave="resetMagnet(this)">
         <button class="cart-btn" onclick="openCart()">
           <i class="fa fa-shopping-bag"></i>
           <span class="cart-badge" id="cartBadge">0</span>
@@ -207,6 +213,19 @@
     <button class="checkout-btn" onclick="startCheckout()">
       إتمام الطلب بأمان <i class="fa fa-arrow-left" style="margin-right:.5rem"></i>
     </button>
+  </div>
+</div>
+
+<!-- Wishlist Sidebar -->
+<div class="cart-overlay" id="wishlistOverlay" onclick="closeWishlist()"></div>
+<div class="cart-sidebar" id="wishlistSidebar">
+  <div class="cart-header">
+    <h2><i class="fa-regular fa-heart"></i> قائمة المفضلة</h2>
+    <button class="close-btn" onclick="closeWishlist()"><i class="fa fa-times"></i></button>
+  </div>
+  
+  <div class="cart-items" id="wishlistItems">
+    <div class="cart-empty"><i class="fa-regular fa-heart"></i><p>قائمة المفضلة فارغة</p></div>
   </div>
 </div>
 
@@ -384,6 +403,7 @@
         </div>
         <h2 class="qv-name" id="qvName"></h2>
         <div class="qv-price" id="qvPrice"></div>
+        <div id="qvDiscountTimer"></div>
         
         <!-- Luxury Tabs Navigation -->
         <div class="qv-tabs">
@@ -452,6 +472,12 @@
             <i class="fa fa-shopping-bag"></i> إضافة للسلة
           </button>
         </div>
+        
+        <!-- Related Products Section -->
+        <div class="qv-related-section" id="qvRelatedSection" style="display:none">
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.8rem; font-size: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">🔥 قد يعجبك أيضاً</h4>
+          <div class="qv-related-grid" id="qvRelatedGrid"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -500,6 +526,11 @@
     <i class="fa fa-search"></i>
     <span>بحث</span>
   </button>
+  <button class="bnav-item" onclick="openWishlist()">
+    <i class="fa-regular fa-heart"></i>
+    <span class="bnav-badge" id="bnavWishlistBadge">0</span>
+    <span>المفضلة</span>
+  </button>
   <button class="bnav-item bnav-cart" onclick="openCart()">
     <i class="fa fa-shopping-bag"></i>
     <span class="bnav-badge" id="bnavBadge">0</span>
@@ -523,6 +554,7 @@
 <script src="/js/features/globals.js"></script>
 <script src="/js/features/ui.js"></script>
 <script src="/js/features/search.js"></script>
+<script src="/js/features/wishlist.js"></script>
 <script src="/js/features/products.js"></script>
 <script src="/js/features/cart.js"></script>
 <script src="/js/features/checkout.js"></script>

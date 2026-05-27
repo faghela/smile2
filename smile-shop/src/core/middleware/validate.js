@@ -17,7 +17,9 @@ const productSchema = Joi.object({
     stock: Joi.number().integer().min(0).default(0).messages({
         'number.base': 'المخزون يجب أن يكون رقماً',
         'number.min': 'المخزون لا يمكن أن يكون سالباً'
-    })
+    }),
+    salePrice: Joi.number().min(0).allow('', null).optional().default(null),
+    discountEndsAt: Joi.date().allow('', null).optional().default(null)
 });
 
 const orderItemSchema = Joi.object({

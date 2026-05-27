@@ -96,18 +96,30 @@ function renderProducts(products, append = false) {
   const html = products.map((p, i) => {
     const stockClass = p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : '';
     const stockTxt   = p.stock === 0 ? 'نفذ المخزون' : p.stock < 5 ? 'كمية محدودة' : 'متوفر';
+    const saleActive = isOnSale(p);
+    
     return `<div class="product-card" style="animation-delay:${append ? i*0.1 : 0}s" onclick="handleCardClick(event, '${p._id}')">
       <div class="card-img">
         ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy">` : '🛍️'}
         <div class="qv-hint"><i class="fa fa-eye"></i> عرض سريع</div>
+        <button class="wishlist-heart-btn ${isInWishlist(p._id) ? 'active' : ''}" data-id="${p._id}" onclick="toggleWishlist(event, '${p._id}')" title="إضافة للمفضلة">
+          <i class="${isInWishlist(p._id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+        </button>
+        ${saleActive ? `<span class="sale-badge">خصم 🔥</span>` : ''}
       </div>
       <div class="card-body">
         <div class="card-cat">${p.category || 'عام'}</div>
         <div class="card-name">${p.name}</div>
         <div class="card-desc">${p.description}</div>
+        ${saleActive ? `<div class="discount-timer" data-end="${p.discountEndsAt}">ينتهي العرض خلال: --:--:--</div>` : ''}
         <div class="card-footer">
           <div>
-            <div class="card-price">${p.price.toLocaleString('en-US')} د</div>
+            <div class="card-price">
+              ${saleActive 
+                ? `<span class="sale-price">${p.salePrice.toLocaleString('en-US')} د</span> <span class="old-price">${p.price.toLocaleString('en-US')} د</span>`
+                : `${p.price.toLocaleString('en-US')} د`
+              }
+            </div>
             <div class="card-stock ${stockClass}">${stockTxt}</div>
           </div>
           <button class="add-btn" ${p.stock === 0 ? 'disabled' : ''} title="إضافة للسلة">
@@ -131,6 +143,10 @@ function renderProducts(products, append = false) {
 function handleCardClick(e, productId) {
   const p = allProducts.find(x => x._id === productId);
   if (!p) return;
+  if (e.target.closest('.wishlist-heart-btn')) {
+    // handled by toggleWishlist
+    return;
+  }
   if (e.target.closest('.add-btn')) {
     if (p.stock > 0) addToCart(p);
   } else {
@@ -158,13 +174,32 @@ function openQuickView(p) {
   qvQty = 1;
   const stockCls = p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'in';
   const stockTxt = p.stock === 0 ? '❌ نفذ المخزون' : p.stock < 5 ? '⚠️ متوفر - كمية محدودة' : '✅ متوفر في المخزون';
+  const saleActive = isOnSale(p);
 
   document.getElementById('qvImg').innerHTML = p.imageUrl
     ? `<img src="${p.imageUrl}" alt="${p.name}">`
     : `<div class="qv-emoji">🛍️</div>`;
   document.getElementById('qvCat').textContent   = p.category || 'عام';
   document.getElementById('qvName').textContent  = p.name;
-  document.getElementById('qvPrice').textContent = `${p.price.toLocaleString('en-US')} دينار`;
+  
+  const qvPriceEl = document.getElementById('qvPrice');
+  if (saleActive) {
+    qvPriceEl.innerHTML = `<span class="sale-price" style="color:#ec4899;font-weight:800">${p.salePrice.toLocaleString('en-US')} د</span> <span class="old-price" style="text-decoration:line-through;font-size:1.1rem;color:var(--txt2);margin-right:0.6rem">${p.price.toLocaleString('en-US')} د</span>`;
+  } else {
+    qvPriceEl.textContent = `${p.price.toLocaleString('en-US')} دينار`;
+  }
+  
+  // Set up Quick View countdown timer
+  const qvTimer = document.getElementById('qvDiscountTimer');
+  if (qvTimer) {
+    if (saleActive) {
+      qvTimer.innerHTML = `<div class="discount-timer" data-end="${p.discountEndsAt}">ينتهي العرض خلال: --:--:--</div>`;
+      qvTimer.style.display = 'flex';
+    } else {
+      qvTimer.style.display = 'none';
+    }
+  }
+
   document.getElementById('qvDesc').textContent  = p.description;
   const stockEl = document.getElementById('qvStock');
   stockEl.textContent = stockTxt;
@@ -186,6 +221,9 @@ function openQuickView(p) {
   addBtn.innerHTML = p.stock === 0
     ? '<i class="fa fa-ban"></i> نفذ المخزون'
     : '<i class="fa fa-shopping-bag"></i> إضافة للسلة';
+
+  // Load related products
+  populateRelatedProducts(p);
 
   document.getElementById('qvOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -258,3 +296,90 @@ function filterCat(cat, el) {
   el.classList.add('active');
   fetchProducts();
 }
+
+// Check if product has an active sale
+function isOnSale(p) {
+  return p.salePrice !== undefined && p.salePrice !== null && p.discountEndsAt && new Date(p.discountEndsAt) > new Date();
+}
+
+// Related products
+async function populateRelatedProducts(product) {
+  const section = document.getElementById('qvRelatedSection');
+  const grid = document.getElementById('qvRelatedGrid');
+  if (!section || !grid) return;
+  
+  try {
+    const res = await fetch(`${API}/products?category=${encodeURIComponent(product.category || 'عام')}&limit=5`);
+    const result = await res.json();
+    const products = result.data || result;
+    
+    const related = products.filter(x => x._id !== product._id && x.stock > 0).slice(0, 4);
+    
+    if (related.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    
+    section.style.display = 'block';
+    grid.innerHTML = related.map(p => {
+      const priceHTML = isOnSale(p)
+        ? `<span class="sale-price" style="color:#ec4899;font-weight:700">${p.salePrice.toLocaleString('en-US')} د</span> <span class="old-price" style="text-decoration:line-through;font-size:0.72rem;color:var(--txt2);margin-right:0.3rem">${p.price.toLocaleString('en-US')} د</span>`
+        : `${p.price.toLocaleString('en-US')} د`;
+        
+      return `
+        <div class="qv-related-card" onclick="openQuickViewById('${p._id}')">
+          <div class="qv-related-img">
+            ${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}
+          </div>
+          <div class="qv-related-name">${p.name}</div>
+          <div class="qv-related-price">${priceHTML}</div>
+        </div>
+      `;
+    }).join('');
+    
+    // Cache related products so they can be opened/added from Quick View
+    related.forEach(rp => {
+      if (!allProducts.some(ap => ap._id === rp._id)) {
+        allProducts.push(rp);
+      }
+    });
+  } catch(e) {
+    console.warn('Failed to load related products:', e);
+    section.style.display = 'none';
+  }
+}
+
+function openQuickViewById(id) {
+  const p = allProducts.find(x => x._id === id);
+  if (p) openQuickView(p);
+}
+
+// Global countdown timers updater
+function updateCountdownTimers() {
+  const timers = document.querySelectorAll('.discount-timer');
+  const now = new Date().getTime();
+  
+  timers.forEach(timer => {
+    const endStr = timer.getAttribute('data-end');
+    if (!endStr) return;
+    const endTime = new Date(endStr).getTime();
+    const distance = endTime - now;
+    
+    if (distance < 0) {
+      timer.innerHTML = "انتهى العرض ⏳";
+      timer.style.color = 'var(--txt2)';
+      timer.style.background = 'rgba(255,255,255,0.05)';
+      timer.style.borderColor = 'var(--border)';
+      return;
+    }
+    
+    const hours = Math.floor(distance / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    const pad = (n) => String(n).padStart(2, '0');
+    timer.innerHTML = `ينتهي العرض خلال: <b>${pad(hours)}:${pad(minutes)}:${pad(seconds)}</b> ⏳`;
+  });
+}
+
+setInterval(updateCountdownTimers, 1000);

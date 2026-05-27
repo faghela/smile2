@@ -88,6 +88,55 @@ const sendTelegramNotification = async (order) => {
     }
 };
 
+// دالة إرسال إشعار تليجرام عند قرب نفاد المخزون (3 قطع أو أقل)
+const sendTelegramLowStockAlert = async (productName, remainingStock) => {
+    try {
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        const chatId = process.env.TELEGRAM_CHAT_ID;
+        
+        if (!token || !chatId) {
+            console.log('ℹ️ [Telegram Low Stock Alert]: تم تخطي إرسال إشعار تليجرام لعدم توفر TELEGRAM_BOT_TOKEN أو TELEGRAM_CHAT_ID');
+            return;
+        }
+        
+        const text = `⚠️ <b>تنبيه مخزون منخفض! 📉</b>\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `📦 <b>المنتج:</b> ${productName}\n` +
+                     `📉 <b>المخزون المتبقي:</b> ${remainingStock} قطع فقط!\n` +
+                     `━━━━━━━━━━━━━━━━━━━━\n` +
+                     `<i>يرجى مراجعة وتجديد المخزون لتفادي نفاده بالكامل.</i>`;
+        
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+        
+        if (!response.ok) {
+            const respText = await response.text();
+            console.error(`[Telegram Low Stock Error]: Status ${response.status} - ${respText}`);
+        } else {
+            console.log(`[Telegram Low Stock Alert]: Sent alert successfully for ${productName} (${remainingStock} left)`);
+        }
+    } catch (err) {
+        console.error('[Telegram Low Stock Alert Error]:', err.message);
+    }
+};
+
+// دالة احتساب السعر الفعلي للمنتج بناءً على العروض النشطة
+const getActivePrice = (product) => {
+    if (product.salePrice !== undefined && product.salePrice !== null && product.discountEndsAt && new Date(product.discountEndsAt) > new Date()) {
+        return product.salePrice;
+    }
+    return product.price;
+};
+
 const rollbackStock = async (deductedProducts) => {
     for (const item of deductedProducts) {
         await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
@@ -121,6 +170,7 @@ const createOrder = async (req, res) => {
         }
         
         const deductedProducts = [];
+        const lowStockAlerts = [];
         try {
             let totalPrice = 0;
             for (const item of items) {
@@ -145,14 +195,23 @@ const createOrder = async (req, res) => {
                     return { status: 400, message: 'عذراً، الكمية المطلوبة من بعض المنتجات غير متوفرة حالياً' };
                 }
 
-                totalPrice += updatedProduct.price * item.quantity;
+                const activePrice = getActivePrice(updatedProduct);
+                totalPrice += activePrice * item.quantity;
                 deductedProducts.push({
                     productId: item.productId,
                     name: updatedProduct.name,
-                    price: updatedProduct.price,
+                    price: activePrice,
                     quantity: item.quantity,
                     imageUrl: updatedProduct.imageUrl
                 });
+
+                // تجميع تنبيهات المخزون المنخفض
+                if (updatedProduct.stock <= 3) {
+                    lowStockAlerts.push({
+                        name: updatedProduct.name,
+                        stock: updatedProduct.stock
+                    });
+                }
             }
 
             // توليد رقم طلب عشوائي فريد من 6 أرقام
@@ -181,7 +240,7 @@ const createOrder = async (req, res) => {
                 await session.commitTransaction();
                 session.endSession();
             }
-            return { success: true, order };
+            return { success: true, order, lowStockAlerts };
         } catch (err) {
             if (useTx) {
                 try { await session.abortTransaction(); } catch (e) {}
@@ -224,10 +283,18 @@ const createOrder = async (req, res) => {
 
         if (result.success) {
             // إرسال إشعارات تلقائية للأدمن بالخلفية دون تأخير الاستجابة للمستخدم
-            Promise.all([
+            const notifications = [
                 sendWhatsAppNotification(result.order),
                 sendTelegramNotification(result.order)
-            ]).catch(err => {
+            ];
+
+            if (result.lowStockAlerts && result.lowStockAlerts.length > 0) {
+                result.lowStockAlerts.forEach(alert => {
+                    notifications.push(sendTelegramLowStockAlert(alert.name, alert.stock));
+                });
+            }
+
+            Promise.all(notifications).catch(err => {
                 console.error('[Notifications Background Error]:', err.message);
             });
             return res.status(201).json({ success: true, order: result.order, message: 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.' });

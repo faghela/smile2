@@ -2,6 +2,7 @@ const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
 let token = localStorage.getItem('smile_admin_token') || '';
 let revenueChart = null;
 let monthlyChart = null;
+let peakHoursChart = null;
 
 let prodPage = 1;
 let prodTotalPages = 1;
@@ -94,8 +95,85 @@ async function loadStats(){
     document.getElementById('s-orders').textContent = d.totalOrders;
     document.getElementById('s-revenue').textContent = (d.totalRevenue||0).toLocaleString('en-US')+'د';
     document.getElementById('s-pending').textContent = d.pendingOrders;
+    
+    const cancellationEl = document.getElementById('s-cancellation');
+    if (cancellationEl) {
+      cancellationEl.textContent = (d.cancellationRate||0).toFixed(1)+'%';
+    }
+    
     drawChart(d.last7Days||[]);
+    
+    if (d.peakHours) {
+      drawPeakHoursChart(d.peakHours);
+    }
+    if (d.topCities) {
+      renderTopCities(d.topCities);
+    }
+    
+    // Fetch and draw monthly stats
+    try {
+      const monthlyRes = await fetch(`${API}/admin/stats/monthly`, {headers:authH()});
+      if (monthlyRes.ok) {
+        const monthlyData = await monthlyRes.json();
+        drawMonthlyChart(monthlyData);
+      }
+    } catch(e) { console.error('Failed to fetch monthly stats:', e); }
+
+    // Fetch and render top products
+    try {
+      const topRes = await fetch(`${API}/admin/stats/top-products`, {headers:authH()});
+      if (topRes.ok) {
+        const topData = await topRes.json();
+        renderTopProducts(topData);
+      }
+    } catch(e) { console.error('Failed to fetch top products:', e); }
+
   } catch(e){ console.error(e); }
+}
+
+function drawPeakHoursChart(data){
+  const ctx = document.getElementById('peakHoursChart').getContext('2d');
+  if(peakHoursChart) peakHoursChart.destroy();
+  peakHoursChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:data.map(d=>d.label),
+      datasets:[{
+        label:'الطلبات',
+        data:data.map(d=>d.count),
+        backgroundColor:'rgba(59,130,246,.15)',
+        borderColor:'#3b82f6',
+        borderWidth:2,
+        borderRadius:8,
+        fill:true,
+        tension:.4,
+        pointBackgroundColor:'#3b82f6'
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8'}},
+        y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#94a3b8',stepSize:1}}
+      }
+    }
+  });
+}
+
+function renderTopCities(data){
+  const el = document.getElementById('topCitiesList');
+  if(!data.length){ el.innerHTML = '<p style="color:var(--txt2);font-size:.9rem">لا توجد بيانات كافية بعد</p>'; return; }
+  el.innerHTML = data.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:1.2rem;font-weight:800;color:var(--pink);min-width:24px">${i+1}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:.9rem">${c.city}</div>
+        <div style="font-size:.8rem;color:var(--txt2)">طلبات: ${c.count} | إيراد: ${(c.revenue||0).toLocaleString('en-US')} د</div>
+      </div>
+      <div style="width:60px;background:rgba(255,255,255,.05);border-radius:4px;height:6px;overflow:hidden">
+        <div style="width:${Math.round((c.count/data[0].count)*100)}%;height:100%;background:linear-gradient(135deg,#3b82f6,#d946ef)"></div>
+      </div>
+    </div>`).join('');
 }
 
 function drawChart(data){
@@ -191,6 +269,21 @@ function openProdModal(pOrId=null){
   document.getElementById('pDesc').value = p?p.description:'';
   document.getElementById('pCat').value = p?p.category:'';
   document.getElementById('pPrice').value = p?p.price:'';
+  
+  document.getElementById('pSalePrice').value = p && p.salePrice !== undefined && p.salePrice !== null ? p.salePrice : '';
+  
+  let formattedDate = '';
+  if (p && p.discountEndsAt) {
+    const d = new Date(p.discountEndsAt);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  document.getElementById('pDiscountEndsAt').value = formattedDate;
+  
   document.getElementById('pStock').value = p?p.stock:'';
   document.getElementById('pImgUrl').value = p?p.imageUrl:'';
   document.getElementById('pImgLink').value = p && p.imageUrl && p.imageUrl.startsWith('http') ? p.imageUrl : '';
@@ -228,13 +321,18 @@ async function saveProd(){
       }
 
       // 2. Save Product
+      const salePriceInput = document.getElementById('pSalePrice').value.trim();
+      const discountEndsAtInput = document.getElementById('pDiscountEndsAt').value.trim();
+      
       const body = {
         name:document.getElementById('pName').value.trim(),
         description:document.getElementById('pDesc').value.trim(),
         category:document.getElementById('pCat').value.trim()||'عام',
         price:+document.getElementById('pPrice').value,
         stock:+document.getElementById('pStock').value,
-        imageUrl: finalImageUrl
+        imageUrl: finalImageUrl,
+        salePrice: salePriceInput === '' ? null : Number(salePriceInput),
+        discountEndsAt: discountEndsAtInput === '' ? null : discountEndsAtInput
       };
       
       const url = id ? `${API}/products/${id}` : `${API}/products`;

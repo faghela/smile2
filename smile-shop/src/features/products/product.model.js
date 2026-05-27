@@ -27,6 +27,14 @@ const productSchema = new mongoose.Schema({
     stock: {
         type: Number,
         default: 0
+    },
+    salePrice: {
+        type: Number,
+        default: null
+    },
+    discountEndsAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

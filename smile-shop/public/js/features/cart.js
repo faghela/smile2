@@ -9,7 +9,20 @@ function addToCart(p, qty = 1) {
   // Haptic-like visual feedback via adding a quick vibration class if supported or a CSS animation
   if (navigator.vibrate) navigator.vibrate(50);
   
-  if(ex){ ex.quantity += qty; } else { cart.push({productId:p._id,name:p.name,price:p.price,quantity:qty,imageUrl:p.imageUrl,stock:p.stock}); }
+  const activePrice = (p.salePrice && p.discountEndsAt && new Date(p.discountEndsAt) > new Date()) ? p.salePrice : p.price;
+  
+  if(ex){ 
+    ex.quantity += qty; 
+  } else { 
+    cart.push({
+      productId: p._id,
+      name: p.name,
+      price: activePrice,
+      quantity: qty,
+      imageUrl: p.imageUrl,
+      stock: p.stock
+    }); 
+  }
   saveCart();
   
   // Trigger cart badge animation
@@ -109,11 +122,14 @@ function populateCrossSell() {
   if(!shuffled.length) { document.getElementById('crossSellSection').style.display = 'none'; return; }
   document.getElementById('crossSellSection').style.display = 'block';
   
-  csDiv.innerHTML = shuffled.map(p => `
-    <div class="cs-card" onclick="addToCartById('${p._id}')">
-      <div class="cs-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}</div>
-      <div class="cs-name">${p.name}</div>
-      <div class="cs-price">+ ${p.price.toLocaleString('en-US')} د</div>
-    </div>
-  `).join('');
+  csDiv.innerHTML = shuffled.map(p => {
+    const activePrice = (p.salePrice && p.discountEndsAt && new Date(p.discountEndsAt) > new Date()) ? p.salePrice : p.price;
+    return `
+      <div class="cs-card" onclick="addToCartById('${p._id}')">
+        <div class="cs-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}</div>
+        <div class="cs-name">${p.name}</div>
+        <div class="cs-price">+ ${activePrice.toLocaleString('en-US')} د</div>
+      </div>
+    `;
+  }).join('');
 }

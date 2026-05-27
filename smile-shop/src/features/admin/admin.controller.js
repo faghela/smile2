@@ -176,7 +176,7 @@ const deleteAdmin = async (req, res) => {
 
 const getStats = async (req, res) => {
     try {
-        const [totalProducts, orderStats, dailyStats] = await Promise.all([
+        const [totalProducts, orderStats, dailyStats, topCities, hourlyStats] = await Promise.all([
             Product.countDocuments(),
             Order.aggregate([
                 {
@@ -208,17 +208,58 @@ const getStats = async (req, res) => {
                         revenue: { $sum: '$totalPrice' }
                     }
                 }
+            ]),
+            Order.aggregate([
+                {
+                    $group: {
+                        _id: '$city',
+                        count: { $sum: 1 },
+                        revenue: { $sum: { $cond: [{ $ne: ['$status', 'cancelled'] }, '$totalPrice', 0] } }
+                    }
+                },
+                { $sort: { count: -1 } },
+                { $limit: 5 }
+            ]),
+            Order.aggregate([
+                {
+                    $group: {
+                        _id: { $hour: { date: '$createdAt', timezone: 'Africa/Tripoli' } },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { '_id': 1 } }
             ])
         ]);
 
         let totalOrders = 0;
         let totalRevenue = 0;
         let pendingOrders = 0;
+        let cancelledOrders = 0;
 
         orderStats.forEach(stat => {
             totalOrders += stat.count;
             totalRevenue += stat.revenue;
             if (stat._id === 'pending') pendingOrders = stat.count;
+            if (stat._id === 'cancelled') cancelledOrders = stat.count;
+        });
+
+        const cancellationRate = totalOrders > 0 ? (cancelledOrders / totalOrders) * 100 : 0;
+
+        // تنسيق المدن الأكثر طلباً
+        const formattedTopCities = topCities.map(c => ({
+            city: c._id ? c._id.trim() : 'غير محدد',
+            count: c.count,
+            revenue: c.revenue
+        }));
+
+        // تنسيق أوقات الذروة لـ 24 ساعة كاملة
+        const peakHours = Array.from({ length: 24 }, (_, hour) => {
+            const stat = hourlyStats.find(s => s._id === hour);
+            return {
+                hour,
+                label: `${String(hour).padStart(2, '0')}:00`,
+                count: stat ? stat.count : 0
+            };
         });
 
         const tz = 'Africa/Tripoli';
@@ -236,7 +277,16 @@ const getStats = async (req, res) => {
             last7Days.push({ label, revenue: dayData ? dayData.revenue : 0 });
         }
 
-        res.json({ totalProducts, totalOrders, totalRevenue, pendingOrders, last7Days });
+        res.json({ 
+            totalProducts, 
+            totalOrders, 
+            totalRevenue, 
+            pendingOrders, 
+            last7Days, 
+            cancellationRate, 
+            topCities: formattedTopCities, 
+            peakHours 
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
