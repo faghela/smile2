@@ -1,4 +1,16 @@
 const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
+
+// دالة لتصفية وتشفير نصوص الـ HTML لمنع ثغرات XSS
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 let token = localStorage.getItem('smile_admin_token') || '';
 let revenueChart = null;
 let monthlyChart = null;
@@ -231,7 +243,7 @@ async function loadProducts(){
     if(!products.length){ tb.innerHTML='<tr><td colspan="6" class="no-data">لا توجد منتجات بعد</td></tr>'; return; }
     tb.innerHTML = products.map(p=>`
       <tr>
-        <td><div class="prod-img">${p.imageUrl?`<img src="${p.imageUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover" onerror="this.parentElement.innerHTML='🛍️'">`:'🛍️'}</div></td>
+        <td><div class="prod-img">${p.imageUrl?`<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}" style="width:40px;height:40px;border-radius:8px;object-fit:cover" onerror="this.parentElement.innerHTML='🛍️'">`:'🛍️'}</div></td>
         <td style="font-weight:600">${p.name}</td>
         <td><span class="badge processing">${p.category||'عام'}</span></td>
         <td style="color:#9f67ff;font-weight:700">${p.price.toLocaleString('en-US')} د</td>
@@ -389,16 +401,16 @@ async function loadOrders(){
     tb.innerHTML = orders.map(o=>`
       <tr>
         <td style="text-align: center;"><input type="checkbox" class="order-chk" data-id="${o._id}" onchange="onOrderSelectChange()"></td>
-        <td style="font-weight:600">${o.customerName}</td>
+        <td style="font-weight:600">${escapeHTML(o.customerName)}</td>
         <td>
           <div style="display:flex; align-items:center; gap:0.4rem; justify-content:center;">
-            <span style="color:var(--txt2)">${o.customerPhone}</span>
+            <span style="color:var(--txt2)">${escapeHTML(o.customerPhone)}</span>
             <a href="${getAdminWhatsAppLink(o.customerPhone, `مرحباً ${o.customerName}، نحن متجر Smile Shop بخصوص طلبك رقم (${o.orderNumber || o._id})...`)}" target="_blank" class="admin-wa-btn" title="مراسلة العميل عبر واتساب" style="color:#10b981; font-size:1.1rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
               <i class="fab fa-whatsapp"></i>
             </a>
           </div>
         </td>
-        <td><span class="badge processing">${o.city || '—'}</span></td>
+        <td><span class="badge processing">${escapeHTML(o.city || '—')}</span></td>
         <td><button class="act-btn edit" onclick="openOrderModal('${o._id}')"><i class="fa fa-eye"></i> تفاصيل</button></td>
         <td style="color:#9f67ff;font-weight:700">${o.totalPrice.toLocaleString('en-US')} د</td>
         <td>
@@ -486,18 +498,18 @@ function openOrderModal(oOrId){
   const o = typeof oOrId === 'string' ? loadedOrders.find(x => x._id === oOrId) : oOrId;
   const html = `
     <div style="margin-bottom:1rem; font-size: 0.95rem;">
-      <p><strong>رقم الطلب:</strong> ${o.orderNumber || o._id}</p>
-      <p><strong>العميل:</strong> ${o.customerName}</p>
-      <p><strong>الهاتف:</strong> ${o.customerPhone} 
+      <p><strong>رقم الطلب:</strong> ${escapeHTML(o.orderNumber || o._id)}</p>
+      <p><strong>العميل:</strong> ${escapeHTML(o.customerName)}</p>
+      <p><strong>الهاتف:</strong> ${escapeHTML(o.customerPhone)} 
         <a href="${getAdminWhatsAppLink(o.customerPhone, `مرحباً ${o.customerName}، نحن متجر Smile Shop بخصوص طلبك رقم (${o.orderNumber || o._id})...`)}" target="_blank" style="color:#10b981; margin-right:0.6rem; font-size:1.15rem;" title="مراسلة عبر واتساب">
           <i class="fab fa-whatsapp"></i>
         </a>
       </p>
-      <p><strong>المدينة:</strong> ${o.city || '—'}</p>
-      <p><strong>العنوان:</strong> ${o.customerAddress}</p>
+      <p><strong>المدينة:</strong> ${escapeHTML(o.city || '—')}</p>
+      <p><strong>العنوان:</strong> ${escapeHTML(o.customerAddress)}</p>
       <p><strong>التوصيل:</strong> ${(o.shippingPrice || 0) === 0 ? 'مجاني' : (o.shippingPrice).toLocaleString('en-US') + ' د'}</p>
       <p><strong>تاريخ الطلب:</strong> ${new Date(o.createdAt).toLocaleString('en-US')}</p>
-      <p><strong>الملاحظات:</strong> ${o.notes || 'لا يوجد'}</p>
+      <p><strong>الملاحظات:</strong> ${escapeHTML(o.notes || 'لا يوجد')}</p>
     </div>
     <table style="width:100%; border:1px solid var(--border); margin-bottom:1rem; border-collapse:collapse; font-size: 0.9rem;">
       <thead>
@@ -511,7 +523,7 @@ function openOrderModal(oOrId){
       <tbody>
         ${o.items.map(i => `
           <tr>
-            <td style="padding:.5rem; border:1px solid var(--border)">${i.name}</td>
+            <td style="padding:.5rem; border:1px solid var(--border)">${escapeHTML(i.name)}</td>
             <td style="padding:.5rem; border:1px solid var(--border)">${i.price} د</td>
             <td style="padding:.5rem; border:1px solid var(--border); text-align: center;">${i.quantity}</td>
             <td style="padding:.5rem; border:1px solid var(--border)">${(i.price * i.quantity).toLocaleString('en-US')} د</td>

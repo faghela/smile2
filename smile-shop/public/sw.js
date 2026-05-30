@@ -12,6 +12,8 @@ const ASSETS = [
   '/js/features/products.js',
   '/js/features/cart.js',
   '/js/features/checkout.js',
+  '/js/features/wishlist.js',
+  '/js/features/track.js',
   '/js/main.js',
   '/manifest.json',
   '/icons/icon-192x192.png',

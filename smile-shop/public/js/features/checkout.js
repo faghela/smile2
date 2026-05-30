@@ -12,7 +12,7 @@ async function fetchShippingZones() {
     if (sel) {
       sel.innerHTML = '<option value="">-- اختر مدينتك --</option>' +
         shippingZones.map(z =>
-          `<option value="${z.city}" data-price="${z.price}">${z.city} — ${z.price === 0 ? 'شحن مجاني' : z.price.toLocaleString('en-US') + ' د'}</option>`
+          `<option value="${escapeHTML(z.city)}" data-price="${z.price}">${escapeHTML(z.city)} — ${z.price === 0 ? 'شحن مجاني' : z.price.toLocaleString('en-US') + ' د'}</option>`
         ).join('');
     }
     
@@ -26,10 +26,11 @@ async function fetchShippingZones() {
       
       grid.innerHTML = shippingZones.map(z => {
         const priceText = z.price === 0 ? 'شحن مجاني' : `${z.price.toLocaleString('en-US')} د`;
+        const escCity = escapeHTML(z.city);
         return `
-          <div class="city-card" data-city="${z.city}" onclick="selectCityCard('${z.city}', ${z.price}, this)">
+          <div class="city-card" data-city="${escCity}" onclick="selectCityCard(this.dataset.city, ${z.price}, this)">
             <i class="fa fa-map-marker-alt city-card-icon"></i>
-            <div class="city-card-name">${z.city}</div>
+            <div class="city-card-name">${escCity}</div>
             <div class="city-card-price">${priceText}</div>
           </div>
         `;
@@ -140,10 +141,10 @@ function updateCheckoutSummary() {
   container.innerHTML = cart.map(item => `
     <div class="summary-item">
       <div class="summary-item-img">
-        ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}">` : '🛍️'}
+        ${item.imageUrl ? `<img src="${escapeHTML(item.imageUrl)}" alt="${escapeHTML(item.name)}">` : '🛍️'}
       </div>
       <div class="summary-item-info">
-        <h4 class="summary-item-name">${item.name}</h4>
+        <h4 class="summary-item-name">${escapeHTML(item.name)}</h4>
         <div class="summary-item-price-qty">
           <span>الكمية: ${item.quantity}</span>
           <span style="margin:0 0.4rem; opacity:0.5">•</span>
@@ -374,7 +375,7 @@ function showSuccessScreen(orderId, phone, name, total, city) {
   
   const waBtn = document.getElementById('whatsappConfirmBtn');
   if (waBtn && orderId) {
-    const supportWa = '218944449445';
+    const supportWa = (window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218944449445';
     const messageText = `مرحباً متجر Smile Shop، لدي استفسار أو واجهتني مشكلة في طلبي رقم *${orderId}*.`;
     waBtn.href = generateWhatsAppLink(supportWa, messageText);
   }

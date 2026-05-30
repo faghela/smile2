@@ -12,14 +12,18 @@ function resetMagnet(el) {
 }
 
 // --- Micro-Interactions: Glowing Cards (Mouse Tracking) ---
+let glowFrame;
 function handleCardsGlow(e) {
-  for (const card of document.querySelectorAll('.product-card')) {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    card.style.setProperty('--mouse-x', `${x}px`);
-    card.style.setProperty('--mouse-y', `${y}px`);
-  }
+  if (glowFrame) cancelAnimationFrame(glowFrame);
+  glowFrame = requestAnimationFrame(() => {
+    for (const card of document.querySelectorAll('.product-card')) {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    }
+  });
 }
 
 // --- Micro-Interactions: Hero Glow ---

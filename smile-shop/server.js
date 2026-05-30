@@ -117,6 +117,14 @@ mongoose.connect(mongoURI)
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.get('/sitemap.xml', getSitemap);
 
+// نقطة فحص سلامة الخادم وقاعدة البيانات (Health Check)
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    });
+});
+
 app.use('/api/products',  productRoutes);
 app.use('/api/orders',    orderRoutes);
 app.use('/api/admin',     adminRoutes);
@@ -135,8 +143,22 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 Server running → http://localhost:${PORT}`);
     console.log(`🛍️  Store   → http://localhost:${PORT}/`);
     console.log(`⚙️  Admin   → http://localhost:${PORT}/admin.html`);
 });
+
+// إغلاق نظيف للخادم وقاعدة البيانات عند استلام إشارات الإيقاف (Graceful Shutdown)
+const gracefulShutdown = async () => {
+    console.log('\n[Graceful Shutdown]: SIGTERM/SIGINT received. Closing HTTP server...');
+    server.close(async () => {
+        console.log('[Graceful Shutdown]: HTTP server closed. Closing MongoDB connection...');
+        await mongoose.connection.close(false);
+        console.log('[Graceful Shutdown]: MongoDB connection closed. Exiting process.');
+        process.exit(0);
+    });
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);

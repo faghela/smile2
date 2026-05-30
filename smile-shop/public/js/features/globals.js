@@ -1,5 +1,17 @@
 // --- Configurations & Globals ---
 const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
+
+// دالة لتصفية وتشفير نصوص الـ HTML لمنع ثغرات XSS
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 let cart = JSON.parse(localStorage.getItem('smile_cart') || '[]');
 let allProducts = [];
 let shippingZones = [];

@@ -3,7 +3,7 @@ const { escapeHTML } = require('../../core/middleware/validate');
 
 const getShippingZones = async (req, res) => {
     try {
-        const zones = await ShippingZone.find().sort({ city: 1 });
+        const zones = await ShippingZone.find().sort({ city: 1 }).lean();
         res.json(zones);
     } catch (err) {
         res.status(500).json({ message: err.message });

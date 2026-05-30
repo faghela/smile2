@@ -81,9 +81,9 @@ function updateWishlistUI() {
       
     return `
       <div class="cart-item">
-        <div class="cart-item-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛒'}</div>
+        <div class="cart-item-img">${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛒'}</div>
         <div class="cart-item-info" style="cursor:pointer;" onclick="openProductFromWishlist('${p._id}')">
-          <div class="cart-item-name">${p.name}</div>
+          <div class="cart-item-name">${escapeHTML(p.name)}</div>
           <div class="cart-item-price">${priceHTML}</div>
         </div>
         <div style="display:flex; flex-direction:column; gap:0.4rem; align-items:flex-end;">

@@ -1,6 +1,14 @@
 // --- Init ---
 updateCartUI();
 fetchProducts();
+
+// تهيئة رابط واتساب الدعم الفني العائم ديناميكياً
+const waSupportBtn = document.getElementById('waSupportBtn');
+if (waSupportBtn) {
+  const supportWa = (window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218944449445';
+  waSupportBtn.href = generateWhatsAppLink(supportWa, 'مرحباً، لدي استفسار أو مشكلة بخصوص متجر Smile Shop');
+}
+
 // تحديث ملخص السعر عند الانتقال للخطوة 3
 document.addEventListener('click', e => {
   if (e.target && e.target.id === 'btnNext2') setTimeout(updateFinalSummary, 50);

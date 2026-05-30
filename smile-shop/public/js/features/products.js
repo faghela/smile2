@@ -100,7 +100,7 @@ function renderProducts(products, append = false) {
     
     return `<div class="product-card" style="animation-delay:${append ? i*0.1 : 0}s" onclick="handleCardClick(event, '${p._id}')">
       <div class="card-img">
-        ${p.imageUrl ? `<img src="${p.imageUrl}" loading="lazy">` : '🛍️'}
+        ${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}" loading="lazy">` : '🛍️'}
         <div class="qv-hint"><i class="fa fa-eye"></i> عرض سريع</div>
         <button class="wishlist-heart-btn ${isInWishlist(p._id) ? 'active' : ''}" data-id="${p._id}" onclick="toggleWishlist(event, '${p._id}')" title="إضافة للمفضلة">
           <i class="${isInWishlist(p._id) ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -108,10 +108,10 @@ function renderProducts(products, append = false) {
         ${saleActive ? `<span class="sale-badge">خصم 🔥</span>` : ''}
       </div>
       <div class="card-body">
-        <div class="card-cat">${p.category || 'عام'}</div>
-        <div class="card-name">${p.name}</div>
-        <div class="card-desc">${p.description}</div>
-        ${saleActive ? `<div class="discount-timer" data-end="${p.discountEndsAt}">ينتهي العرض خلال: --:--:--</div>` : ''}
+        <div class="card-cat">${escapeHTML(p.category || 'عام')}</div>
+        <div class="card-name">${escapeHTML(p.name)}</div>
+        <div class="card-desc">${escapeHTML(p.description)}</div>
+        ${saleActive ? `<div class="discount-timer" data-end="${escapeHTML(p.discountEndsAt)}">ينتهي العرض خلال: --:--:--</div>` : ''}
         <div class="card-footer">
           <div>
             <div class="card-price">
@@ -177,7 +177,7 @@ function openQuickView(p) {
   const saleActive = isOnSale(p);
 
   document.getElementById('qvImg').innerHTML = p.imageUrl
-    ? `<img src="${p.imageUrl}" alt="${p.name}">`
+    ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">`
     : `<div class="qv-emoji">🛍️</div>`;
   document.getElementById('qvCat').textContent   = p.category || 'عام';
   document.getElementById('qvName').textContent  = p.name;
@@ -284,7 +284,7 @@ async function fetchCategories() {
     };
     const getLabel = (c) => `${iconMap[c] || '🏷️'} ${c}`;
     bar.innerHTML = `<button class="cat-btn ${'الكل' === currentCat ? 'active' : ''}" onclick="filterCat('الكل',this)">${getLabel('الكل')}</button>` +
-      uniqueCats.map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="filterCat('${c}',this)">${getLabel(c)}</button>`).join('');
+      uniqueCats.map(c => `<button class="cat-btn ${c===currentCat?'active':''}" onclick="filterCat('${escapeHTML(c)}',this)">${getLabel(escapeHTML(c))}</button>`).join('');
   } catch(e) {
     console.error('fetchCategories failed:', e);
   }
@@ -329,9 +329,9 @@ async function populateRelatedProducts(product) {
       return `
         <div class="qv-related-card" onclick="openQuickViewById('${p._id}')">
           <div class="qv-related-img">
-            ${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}
+            ${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛍️'}
           </div>
-          <div class="qv-related-name">${p.name}</div>
+          <div class="qv-related-name">${escapeHTML(p.name)}</div>
           <div class="qv-related-price">${priceHTML}</div>
         </div>
       `;

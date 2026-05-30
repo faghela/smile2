@@ -23,14 +23,16 @@ async function onSmartSearch(val) {
     if(!prods.length) { resDiv.innerHTML = '<div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding-top:2rem;"><i class="fa fa-ghost fa-3x" style="opacity:0.2; margin-bottom:1rem; display:block"></i>لا توجد نتائج مطابقة</div>'; return; }
     resDiv.innerHTML = prods.map(p => `
       <div class="s-res-card" onclick="openSearchProduct('${p._id}')">
-        <div class="s-res-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}</div>
+        <div class="s-res-img">${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛍️'}</div>
         <div class="s-res-info">
-          <h4>${p.name}</h4>
+          <h4>${escapeHTML(p.name)}</h4>
           <p>${p.price.toLocaleString('en-US')} د</p>
         </div>
       </div>
     `).join('');
-  } catch(e) {}
+  } catch(e) {
+    console.error('Search failed:', e);
+  }
 }
 function openSearchProduct(id) {
   closeSearch();

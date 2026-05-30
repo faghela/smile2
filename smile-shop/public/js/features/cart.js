@@ -87,9 +87,9 @@ function updateCartUI() {
     // عرض المنتجات أولاً — دائماً — بمعزل عن أي خطأ آخر
     el.innerHTML = cart.map(i => `
       <div class="cart-item">
-        <div class="cart-item-img">${i.imageUrl ? `<img src="${i.imageUrl}">` : '🛒'}</div>
+        <div class="cart-item-img">${i.imageUrl ? `<img src="${escapeHTML(i.imageUrl)}" alt="${escapeHTML(i.name)}">` : '🛒'}</div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${i.name}</div>
+          <div class="cart-item-name">${escapeHTML(i.name)}</div>
           <div class="cart-item-price">${(i.price * i.quantity).toLocaleString('en-US')} د</div>
           <div class="qty-ctrl">
             <button class="qty-btn" onclick="changeQty('${i.productId}',-1)">-</button>
@@ -117,7 +117,7 @@ function populateCrossSell() {
   const csDiv = document.getElementById('csItems');
   // Simple algorithm: pick 3 random products not in cart
   const available = allProducts.filter(p => !cart.find(c => c.productId === p._id) && p.stock > 0);
-  const shuffled = available.sort(() => 0.5 - Math.random()).slice(0, 4);
+  const shuffled = [...available].sort(() => 0.5 - Math.random()).slice(0, 4); // copy array first to avoid in-place sorting
   
   if(!shuffled.length) { document.getElementById('crossSellSection').style.display = 'none'; return; }
   document.getElementById('crossSellSection').style.display = 'block';
@@ -126,8 +126,8 @@ function populateCrossSell() {
     const activePrice = (p.salePrice && p.discountEndsAt && new Date(p.discountEndsAt) > new Date()) ? p.salePrice : p.price;
     return `
       <div class="cs-card" onclick="addToCartById('${p._id}')">
-        <div class="cs-img">${p.imageUrl ? `<img src="${p.imageUrl}">` : '🛍️'}</div>
-        <div class="cs-name">${p.name}</div>
+        <div class="cs-img">${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛍️'}</div>
+        <div class="cs-name">${escapeHTML(p.name)}</div>
         <div class="cs-price">+ ${activePrice.toLocaleString('en-US')} د</div>
       </div>
     `;

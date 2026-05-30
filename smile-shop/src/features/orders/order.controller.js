@@ -414,7 +414,7 @@ const getOrders = async (req, res) => {
         const skip = (pageNum - 1) * limitNum;
 
         const [orders, totalItems] = await Promise.all([
-            Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+            Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
             Order.countDocuments(query)
         ]);
 
@@ -448,17 +448,16 @@ const updateOrderStatus = async (req, res) => {
         if (!order) return res.status(404).json({ message: 'الطلب غير موجود' });
 
         const previousStatus = order.status;
-        order.status = status;
-        await order.save();
 
-        // استرجاع المخزون عند إلغاء طلب لم يُشحن أو يُسلَّم بعد
+        // استرجاع المخزون أولاً عند إلغاء طلب لم يُشحن أو يُسلَّم بعد
         if (status === 'cancelled' && previousStatus !== 'cancelled' && REFUNDABLE.includes(previousStatus)) {
             for (const item of order.items) {
-                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
-                    console.error(`[WARN] Failed to refund stock for product ${item.productId}:`, e);
-                });
+                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
             }
         }
+
+        order.status = status;
+        await order.save();
 
         res.json({ success: true, order });
     } catch (err) {
@@ -468,16 +467,17 @@ const updateOrderStatus = async (req, res) => {
 
 const deleteOrder = async (req, res) => {
     try {
-        const order = await Order.findByIdAndDelete(req.params.id);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.status(404).json({ message: 'الطلب غير موجود' });
 
+        // استرجاع المخزون أولاً قبل حذف الطلب
         if (order.status === 'pending' || order.status === 'processing') {
             for (const item of order.items) {
-                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(e => {
-                    console.error(`[WARN] Failed to refund stock for product ${item.productId}:`, e);
-                });
+                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
             }
         }
+
+        await Order.findByIdAndDelete(req.params.id);
 
         res.json({ success: true, message: 'تم حذف الطلب وإرجاع المخزون (إن لزم الأمر)' });
     } catch (err) {

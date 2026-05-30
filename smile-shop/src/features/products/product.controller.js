@@ -56,7 +56,7 @@ const getProducts = async (req, res) => {
         const skip     = (pageNum - 1) * limitNum;
 
         const [products, totalItems] = await Promise.all([
-            Product.find(query).sort(sortOption).skip(skip).limit(limitNum),
+            Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
             Product.countDocuments(query)
         ]);
 
@@ -76,7 +76,7 @@ const getProducts = async (req, res) => {
 
 const getProductById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id).lean();
         if (!product) return res.status(404).json({ message: 'المنتج غير موجود' });
         res.json(product);
     } catch (err) {

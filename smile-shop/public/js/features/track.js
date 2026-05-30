@@ -1,5 +1,4 @@
 // public/js/features/track.js
-const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
 
 const statusLabels = {
   pending:    { ar: 'معلق',          icon: 'fa-clock' },
@@ -48,7 +47,7 @@ function renderTimeline(status) {
 function renderOrder(o, index) {
   const sl   = statusLabels[o.status] || { ar: o.status, icon: 'fa-circle' };
   const date = new Date(o.createdAt).toLocaleDateString('ar-LY', { year:'numeric', month:'long', day:'numeric', numberingSystem: 'latn' });
-  const displayId = o.orderNumber || String(o._id).slice(-8).toUpperCase();
+  const displayId = escapeHTML(o.orderNumber || String(o._id).slice(-8).toUpperCase());
 
   return `
     <div class="order-card">
@@ -69,7 +68,7 @@ function renderOrder(o, index) {
           <tbody>
             ${o.items.map(i => `
               <tr>
-                <td>${i.name}</td>
+                <td>${escapeHTML(i.name)}</td>
                 <td>${i.price.toLocaleString('en-US')} د</td>
                 <td style="text-align:center">${i.quantity}</td>
                 <td>${(i.price * i.quantity).toLocaleString('en-US')} د</td>
@@ -80,8 +79,8 @@ function renderOrder(o, index) {
           <span>الإجمالي الكلي</span>
           <span>${o.totalPrice.toLocaleString('en-US')} دينار</span>
         </div>
-        ${o.notes ? `<p style="margin-top:.8rem;font-size:.85rem;color:var(--txt2)"><strong>ملاحظات:</strong> ${o.notes}</p>` : ''}
-        ${o.customerAddress ? `<p style="margin-top:.4rem;font-size:.85rem;color:var(--txt2)"><strong>العنوان:</strong> ${o.customerAddress}</p>` : ''}
+        ${o.notes ? `<p style="margin-top:.8rem;font-size:.85rem;color:var(--txt2)"><strong>ملاحظات:</strong> ${escapeHTML(o.notes)}</p>` : ''}
+        ${o.customerAddress ? `<p style="margin-top:.4rem;font-size:.85rem;color:var(--txt2)"><strong>العنوان:</strong> ${escapeHTML(o.customerAddress)}</p>` : ''}
         <div style="display:flex; justify-content:center; margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
           <a href="${generateWhatsAppLink((window.APP_CONFIG && window.APP_CONFIG.WHATSAPP_NUMBER) || '218910000000', `مرحباً متجر Smile Shop، أود الاستفسار عن حالة طلبي رقم *${displayId}* (الحالة الحالية للطلب: *${sl.ar}*)`)}" target="_blank" class="btn-whatsapp-track">
              <i class="fab fa-whatsapp" style="margin-left:0.5rem"></i> استفسار عن الطلب عبر واتساب
