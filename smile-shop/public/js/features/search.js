@@ -1,39 +1,69 @@
 // --- Smart Search ---
 let searchResultsList = [];
 
+/**
+ * Opens the search overlay and focuses on the search input field.
+ */
 function openSearch() {
-  document.getElementById('searchOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('smartSearchInput').focus(), 100);
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('smartSearchInput');
+  if (overlay) overlay.classList.add('open');
+  if (input) setTimeout(() => input.focus(), 100);
 }
+
+/**
+ * Closes the search overlay.
+ */
 function closeSearch() {
-  document.getElementById('searchOverlay').classList.remove('open');
+  const overlay = document.getElementById('searchOverlay');
+  if (overlay) overlay.classList.remove('open');
 }
+
+let searchTimer;
+/**
+ * Triggers smart search over the products API with debounce.
+ * @param {string} val - Query value from search input.
+ */
 async function onSmartSearch(val) {
   const resDiv = document.getElementById('searchResults');
+  
+  clearTimeout(searchTimer);
+  
   if(!val.trim()) { 
     searchResultsList = [];
     resDiv.innerHTML = '<div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding-top:2rem;">ابحث عن أي شيء لتظهر النتائج هنا فوراً</div>'; 
     return; 
   }
-  try {
-    const res = await fetch(`${API}/products?search=${encodeURIComponent(val)}&limit=8`);
-    const data = await res.json();
-    const prods = data.data || data;
-    searchResultsList = prods;
-    if(!prods.length) { resDiv.innerHTML = '<div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding-top:2rem;"><i class="fa fa-ghost fa-3x" style="opacity:0.2; margin-bottom:1rem; display:block"></i>لا توجد نتائج مطابقة</div>'; return; }
-    resDiv.innerHTML = prods.map(p => `
-      <div class="s-res-card" onclick="openSearchProduct('${p._id}')">
-        <div class="s-res-img">${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛍️'}</div>
-        <div class="s-res-info">
-          <h4>${escapeHTML(p.name)}</h4>
-          <p>${p.price.toLocaleString('en-US')} د</p>
+  
+  searchTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API}/products?search=${encodeURIComponent(val)}&limit=8`);
+      const data = await res.json();
+      const prods = data.data || data;
+      searchResultsList = prods;
+      if(!prods.length) { 
+        resDiv.innerHTML = '<div style="text-align:center; color:var(--txt2); grid-column:1/-1; padding-top:2rem;"><i class="fa fa-ghost fa-3x" style="opacity:0.2; margin-bottom:1rem; display:block"></i>لا توجد نتائج مطابقة</div>'; 
+        return; 
+      }
+      resDiv.innerHTML = prods.map(p => `
+        <div class="s-res-card" onclick="openSearchProduct('${p._id}')">
+          <div class="s-res-img">${p.imageUrl ? `<img src="${escapeHTML(p.imageUrl)}" alt="${escapeHTML(p.name)}">` : '🛍️'}</div>
+          <div class="s-res-info">
+            <h4>${escapeHTML(p.name)}</h4>
+            <p>${p.price.toLocaleString('en-US')} د</p>
+          </div>
         </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    console.error('Search failed:', e);
-  }
+      `).join('');
+    } catch(e) {
+      console.error('Search failed:', e);
+    }
+  }, 300);
 }
+
+/**
+ * Opens a product in the Quick View modal directly from search results.
+ * @param {string} id - Product ID.
+ */
 function openSearchProduct(id) {
   closeSearch();
   const p = searchResultsList.find(x => x._id === id) || allProducts.find(x => x._id === id);
@@ -51,4 +81,4 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     openSearch();
   }
-});
+});

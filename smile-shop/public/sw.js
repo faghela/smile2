@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smile-shop-v1';
+const CACHE_NAME = 'smile-shop-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -46,21 +46,56 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // عدم اعتراض طلبات الـ API
-  if (e.request.url.includes('/api/')) {
+  // Ignore API calls and non-GET requests
+  if (e.request.url.includes('/api/') || e.request.method !== 'GET') {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(e.request).catch(() => {
-        if (e.request.mode === 'navigate') {
-          return caches.match('/offline.html');
+  // Network-First Strategy for HTML Navigation Requests
+  const isHtmlRequest = e.request.mode === 'navigate' || 
+                        e.request.url.endsWith('.html') || 
+                        e.request.url === self.location.origin + '/';
+
+  if (isHtmlRequest) {
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(e.request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/offline.html');
+          });
+        })
+    );
+  } else {
+    // Cache-First with Background Sync Strategy for Static Assets (stale-while-revalidate)
+    e.respondWith(
+      caches.match(e.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          // Revalidate cache in background
+          fetch(e.request).then((response) => {
+            if (response.status === 200) {
+              caches.open(CACHE_NAME).then((cache) => cache.put(e.request, response));
+            }
+          }).catch(() => {/* Ignore background fetch errors */});
+          
+          return cachedResponse;
         }
-      });
-    })
-  );
+
+        return fetch(e.request).then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+  }
 });
+

@@ -7,12 +7,21 @@ try {
   wishlist = [];
 }
 
+/**
+ * Saves the current wishlist to localStorage and updates UI elements.
+ */
 function saveWishlist() {
   localStorage.setItem('smile_wishlist', JSON.stringify(wishlist));
   updateWishlistUI();
   updateHeartButtons();
 }
 
+/**
+ * Toggles a product in the wishlist (adds if not present, removes if present).
+ * Shows a toast message to the user upon change.
+ * @param {Event} e - The trigger event (optional, for stopping propagation).
+ * @param {string} productId - ID of the product.
+ */
 function toggleWishlist(e, productId) {
   if (e) e.stopPropagation();
   
@@ -32,20 +41,38 @@ function toggleWishlist(e, productId) {
   saveWishlist();
 }
 
+/**
+ * Checks if a product is currently in the wishlist.
+ * @param {string} productId - ID of the product.
+ * @returns {boolean} True if the product is in the wishlist.
+ */
 function isInWishlist(productId) {
   return wishlist.includes(productId);
 }
 
+/**
+ * Opens the wishlist sidebar overlay.
+ */
 function openWishlist() {
-  document.getElementById('wishlistSidebar').classList.add('open');
-  document.getElementById('wishlistOverlay').classList.add('open');
+  const sidebar = document.getElementById('wishlistSidebar');
+  const overlay = document.getElementById('wishlistOverlay');
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('open');
 }
 
+/**
+ * Closes the wishlist sidebar overlay.
+ */
 function closeWishlist() {
-  document.getElementById('wishlistSidebar').classList.remove('open');
-  document.getElementById('wishlistOverlay').classList.remove('open');
+  const sidebar = document.getElementById('wishlistSidebar');
+  const overlay = document.getElementById('wishlistOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
 }
 
+/**
+ * Renders/updates the wishlist items in the sidebar UI.
+ */
 function updateWishlistUI() {
   const badge = document.getElementById('wishlistBadge');
   const bnavBadge = document.getElementById('bnavWishlistBadge');
@@ -74,7 +101,6 @@ function updateWishlistUI() {
     if (!p) return ''; // If product is not loaded
     
     // Check if on sale
-    const activePrice = (p.salePrice && p.discountEndsAt && new Date(p.discountEndsAt) > new Date()) ? p.salePrice : p.price;
     const priceHTML = (p.salePrice && p.discountEndsAt && new Date(p.discountEndsAt) > new Date())
       ? `<span class="sale-price" style="color:#ec4899;font-weight:800">${p.salePrice.toLocaleString('en-US')} د</span> <span class="old-price" style="text-decoration:line-through;font-size:0.8rem;color:var(--txt2);margin-right:0.4rem">${p.price.toLocaleString('en-US')} د</span>`
       : `${p.price.toLocaleString('en-US')} د`;
@@ -99,6 +125,10 @@ function updateWishlistUI() {
   el.innerHTML = itemsHTML;
 }
 
+/**
+ * Opens a product in the quick view modal directly from the wishlist.
+ * @param {string} id - ID of the product.
+ */
 function openProductFromWishlist(id) {
   const p = allProducts.find(x => x._id === id);
   if (p) {
@@ -107,6 +137,10 @@ function openProductFromWishlist(id) {
   }
 }
 
+/**
+ * Adds a product from the wishlist directly to the shopping cart.
+ * @param {string} id - ID of the product.
+ */
 function addFromWishlistToCart(id) {
   const p = allProducts.find(x => x._id === id);
   if (p) {
@@ -114,6 +148,9 @@ function addFromWishlistToCart(id) {
   }
 }
 
+/**
+ * Updates all wishlist heart button icons across the interface.
+ */
 function updateHeartButtons() {
   document.querySelectorAll('.wishlist-heart-btn').forEach(btn => {
     const id = btn.getAttribute('data-id');
@@ -132,3 +169,4 @@ function updateHeartButtons() {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(updateWishlistUI, 500);
 });
+

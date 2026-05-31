@@ -1616,4 +1616,186 @@ select option { background-color: #0a0a14 !important; color: #f8fafc !important;
   margin-top: 0.2rem;
 }
 
+/* ==========================================================================
+   PERFORMANCE & DYNAMIC BEAUTY OVERRIDES (Phase 1 & 2)
+   ========================================================================== */
+
+/* 1.1 & 1.2 Aurora BG & backdrop-filter Mobile Optimization */
+@media (max-width: 768px) {
+  .aurora-bg {
+    filter: blur(60px) !important;
+    opacity: 0.3 !important;
+  }
+  .blob {
+    animation-duration: 45s !important; /* Much slower animations = less CPU load */
+  }
+  .blob-purple {
+    width: 220px !important;
+    height: 220px !important;
+  }
+  .blob-pink {
+    width: 260px !important;
+    height: 260px !important;
+  }
+  .blob-blue {
+    width: 190px !important;
+    height: 190px !important;
+  }
+
+  /* Disable backdrop-filter on heavy mobile elements */
+  .cat-btn, 
+  .product-card, 
+  .toast, 
+  .qv-badge-item, 
+  .wishlist-heart-btn { 
+    backdrop-filter: none !important; 
+  }
+  .search-overlay { 
+    backdrop-filter: blur(12px) !important; 
+  }
+  .cart-overlay { 
+    backdrop-filter: none !important; 
+    background: rgba(0, 0, 0, 0.85) !important; 
+  }
+  .modal-overlay { 
+    backdrop-filter: none !important; 
+    background: rgba(0, 0, 0, 0.9) !important; 
+  }
+}
+
+/* 1.3 Prefers Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .aurora-bg { 
+    display: none !important; 
+  }
+  .hero-glow { 
+    display: none !important; 
+  }
+  .shimmer-text { 
+    animation: none !important; 
+    background: var(--grad) !important; 
+    -webkit-background-clip: text !important; 
+    -webkit-text-fill-color: transparent !important; 
+  }
+  .blob { 
+    animation: none !important; 
+  }
+}
+
+/* 1.6 Optimized transitions using specific properties (instead of 'all') */
+.product-card {
+  contain: layout style;
+}
+.cat-btn {
+  transition: border-color 0.3s, color 0.3s, background-color 0.3s, transform 0.3s, box-shadow 0.3s !important;
+}
+.search-trigger {
+  transition: border-color 0.3s, background-color 0.3s, transform 0.3s !important;
+}
+.track-link {
+  transition: color 0.3s, transform 0.3s, text-shadow 0.3s !important;
+}
+.cart-btn {
+  transition: transform 0.2s cubic-bezier(0.3, 2, 0.4, 1), box-shadow 0.3s !important;
+}
+.add-btn {
+  transition: background-color 0.4s, border-color 0.4s, color 0.4s, transform 0.4s, box-shadow 0.4s !important;
+}
+.product-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important;
+}
+.qv-related-card {
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s !important;
+}
+.btn-whatsapp-confirm {
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s !important;
+}
+.btn-whatsapp-track {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s, transform 0.3s, box-shadow 0.3s !important;
+}
+.whatsapp-float {
+  transition: transform 0.3s, box-shadow 0.3s !important;
+}
+.wishlist-heart-btn {
+  transition: transform 0.3s, background-color 0.3s, border-color 0.3s, color 0.3s !important;
+}
+.wishlist-btn {
+  transition: background-color 0.3s, color 0.3s, transform 0.3s !important;
+}
+
+/* 2.1 Smooth page load entrance */
+@keyframes fadeInPage {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+body {
+  animation: fadeInPage 0.4s ease-out forwards;
+}
+
+/* 2.3 Spring-like bezier curves for Modal & Sidebar transitions */
+.modal {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease !important;
+}
+.cart-sidebar {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+/* Staggered entry for cart items when cart opens */
+.cart-sidebar.open .cart-item {
+  animation: slideInCartItem 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cart-sidebar.open .cart-item:nth-child(1) { animation-delay: 0.04s; }
+.cart-sidebar.open .cart-item:nth-child(2) { animation-delay: 0.08s; }
+.cart-sidebar.open .cart-item:nth-child(3) { animation-delay: 0.12s; }
+.cart-sidebar.open .cart-item:nth-child(4) { animation-delay: 0.16s; }
+.cart-sidebar.open .cart-item:nth-child(5) { animation-delay: 0.20s; }
+
+@keyframes slideInCartItem {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* 2.4 Premium Toast slide-in from bottom with optimized aesthetics */
+#toast-container {
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+}
+.toast {
+  border-radius: 16px !important;
+  padding: 1rem 1.75rem !important;
+  font-family: 'Cairo', sans-serif;
+  animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast.success {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  color: #10b981 !important;
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15) !important;
+}
+.toast.error {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  color: #ef4444 !important;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.15) !important;
+}
+.toast.info {
+  background: rgba(139, 92, 246, 0.1) !important;
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+  color: #a78bfa !important;
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15) !important;
+}
+
+
 

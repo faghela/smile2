@@ -1,15 +1,4 @@
-const API = (window.APP_CONFIG && window.APP_CONFIG.API_URL) || '/api';
-
-// دالة لتصفية وتشفير نصوص الـ HTML لمنع ثغرات XSS
-function escapeHTML(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+// API and escapeHTML are loaded globally from globals.js
 
 let token = localStorage.getItem('smile_admin_token') || '';
 let revenueChart = null;

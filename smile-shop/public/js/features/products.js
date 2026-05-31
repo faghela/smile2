@@ -132,12 +132,30 @@ function renderProducts(products, append = false) {
 
   if (append) { grid.insertAdjacentHTML('beforeend', html); } else { grid.innerHTML = html; }
 
-  // Staggered reveal
-  setTimeout(() => {
-    document.querySelectorAll('.product-card:not(.reveal)').forEach((el, idx) => {
-      setTimeout(() => el.classList.add('reveal'), idx * 50);
+  // Staggered reveal using IntersectionObserver
+  const observerOptions = {
+    threshold: 0.05,
+    rootMargin: "0px 0px -30px 0px"
+  };
+  
+  let revealDelay = 0;
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const card = entry.target;
+        setTimeout(() => {
+          card.classList.add('reveal');
+        }, revealDelay);
+        revealDelay += 40; // slightly faster reveal for snappier feel
+        setTimeout(() => { revealDelay = 0; }, 80);
+        observer.unobserve(card);
+      }
     });
-  }, 50);
+  }, observerOptions);
+
+  document.querySelectorAll('.product-card:not(.reveal)').forEach(card => {
+    revealObserver.observe(card);
+  });
 }
 
 function handleCardClick(e, productId) {
@@ -355,22 +373,32 @@ function openQuickViewById(id) {
 }
 
 // Global countdown timers updater
+let lastSecond = -1;
 function updateCountdownTimers() {
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (nowSec === lastSecond) return;
+  lastSecond = nowSec;
+
   const timers = document.querySelectorAll('.discount-timer');
-  const now = new Date().getTime();
+  if (timers.length === 0) return;
   
-  timers.forEach(timer => {
+  const now = Date.now();
+  for (let i = 0; i < timers.length; i++) {
+    const timer = timers[i];
     const endStr = timer.getAttribute('data-end');
-    if (!endStr) return;
+    if (!endStr) continue;
     const endTime = new Date(endStr).getTime();
     const distance = endTime - now;
     
     if (distance < 0) {
-      timer.innerHTML = "انتهى العرض ⏳";
-      timer.style.color = 'var(--txt2)';
-      timer.style.background = 'rgba(255,255,255,0.05)';
-      timer.style.borderColor = 'var(--border)';
-      return;
+      const expiredText = "انتهى العرض ⏳";
+      if (timer.textContent !== expiredText) {
+        timer.textContent = expiredText;
+        timer.style.color = 'var(--txt2)';
+        timer.style.background = 'rgba(255,255,255,0.05)';
+        timer.style.borderColor = 'var(--border)';
+      }
+      continue;
     }
     
     const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -378,8 +406,12 @@ function updateCountdownTimers() {
     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
     const pad = (n) => String(n).padStart(2, '0');
-    timer.innerHTML = `ينتهي العرض خلال: <b>${pad(hours)}:${pad(minutes)}:${pad(seconds)}</b> ⏳`;
-  });
+    const newText = `ينتهي العرض خلال: ${pad(hours)}:${pad(minutes)}:${pad(seconds)} ⏳`;
+    if (timer.textContent !== newText) {
+      timer.textContent = newText;
+    }
+  }
 }
 
+// Throttled setInterval running every 1000ms
 setInterval(updateCountdownTimers, 1000);
