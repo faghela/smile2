@@ -77,8 +77,8 @@ app.use(express.json());
 const staticCacheOptions = {
     maxAge: '1d',
     setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            // عدم تخزين ملفات HTML لضمان حصول المستخدم على التحديثات فوراً
+        if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+            // عدم تخزين ملفات HTML والـ Service Worker لضمان حصول المستخدم على التحديثات فوراً
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         } else if (filePath.match(/\.(jpg|jpeg|png|gif|webp|svg|css|js|woff2?|json)$/)) {
             // تخزين الأصول الأخرى لمدة سنة كاملة
